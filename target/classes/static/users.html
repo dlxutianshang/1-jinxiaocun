@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户列表</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>用户列表</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>用户名</th>
+                    <th>邮箱</th>
+                </tr>
+            </thead>
+            <tbody id="userTable">
+            </tbody>
+        </table>
+        <p><a href="index.html">返回首页</a></p>
+    </div>
+    <script>
+        fetch('/api/user/list')
+            .then(res => res.json())
+            .then(result => {
+                var tbody = document.getElementById('userTable');
+                result.data.forEach(function(user) {
+                    var tr = document.createElement('tr');
+                    tr.innerHTML = '<td>' + user.id + '</td><td>' + user.username + '</td><td>' + user.email + '</td>';
+                    tbody.appendChild(tr);
+                });
+            });
+    </script>
+</body>
+</html>

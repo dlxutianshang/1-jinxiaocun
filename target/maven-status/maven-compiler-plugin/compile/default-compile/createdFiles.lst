@@ -1,0 +1,5 @@
+com\inventory\model\User.class
+com\inventory\service\UserService.class
+com\inventory\controller\UserController.class
+com\inventory\InventoryApplication.class
+com\inventory\repository\UserRepository.class

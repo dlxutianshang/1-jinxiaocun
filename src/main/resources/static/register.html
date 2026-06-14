@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户注册</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="form-container">
+        <h2>用户注册</h2>
+        <form id="registerForm">
+            <div class="form-group">
+                <label>用户名：</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label>密码：</label>
+                <input type="password" id="password" required>
+            </div>
+            <div class="form-group">
+                <label>邮箱：</label>
+                <input type="email" id="email" required>
+            </div>
+            <button type="submit" class="btn">注册</button>
+            <p id="message" class="message"></p>
+        </form>
+        <p><a href="index.html">返回首页</a></p>
+    </div>
+    <script>
+        document.getElementById('registerForm').onsubmit = function(e) {
+            e.preventDefault();
+            var data = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                email: document.getElementById('email').value
+            };
+            fetch('/api/user/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(res => res.json()).then(result => {
+                var msg = document.getElementById('message');
+                msg.textContent = result.message;
+                msg.className = 'message ' + (result.success ? 'success' : 'error');
+                if (result.success) {
+                    setTimeout(function() {
+                        window.location.href = 'login.html';
+                    }, 1000);
+                }
+            });
+        };
+    </script>
+</body>
+</html>
