@@ -2,17 +2,63 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>进销存系统</title>
+    <title>进销存系统 - 登录</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="form-container">
         <h1>进销存系统</h1>
-        <div class="menu">
-            <a href="login.html" class="btn">用户登录</a>
-            <a href="register.html" class="btn">用户注册</a>
-            <a href="users.html" class="btn">用户列表</a>
-        </div>
+        <h2>用户登录</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>用户名：</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label>密码：</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="btn">登 录</button>
+            <p id="message" class="message"></p>
+        </form>
+        <p class="center">
+            <button class="btn btn-secondary" onclick="window.location.href='register.html'">立即注册</button>
+        </p>
+        <p class="hint">默认管理员账号：admin / 123456</p>
     </div>
+    <script>
+        document.getElementById('loginForm').onsubmit = function(e) {
+            e.preventDefault();
+            var data = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+            fetch('/api/user/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(res => res.json()).then(result => {
+                var msg = document.getElementById('message');
+                msg.textContent = result.message;
+                msg.className = 'message ' + (result.success ? 'success' : 'error');
+                if (result.success) {
+                    localStorage.setItem('currentUser', JSON.stringify(result.data));
+                    setTimeout(function() {
+                        window.location.href = 'dashboard.html';
+                    }, 800);
+                }
+            });
+        };
+
+        (function checkLogin() {
+            var cu = localStorage.getItem('currentUser');
+            if (cu) {
+                try {
+                    var u = JSON.parse(cu);
+                    if (u && u.id) window.location.href = 'dashboard.html';
+                } catch (e) {}
+            }
+        })();
+    </script>
 </body>
 </html>

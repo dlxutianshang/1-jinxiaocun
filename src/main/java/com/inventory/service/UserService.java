@@ -5,6 +5,7 @@ import com.inventory.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -31,5 +32,16 @@ public class UserService {
 
     public List<User> findAll() {
         return userRepository.findAll();
+    }
+
+    public List<User> findByPermission(Integer currentUserId, String currentRole) {
+        if ("ADMIN".equalsIgnoreCase(currentRole)) {
+            return userRepository.findAll();
+        } else {
+            List<User> list = new ArrayList<>();
+            User me = userRepository.findById(currentUserId);
+            if (me != null) list.add(me);
+            return list;
+        }
     }
 }

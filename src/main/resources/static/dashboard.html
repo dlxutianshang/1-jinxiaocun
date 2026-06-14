@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>进销存系统 - 主页</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>进销存系统</h2>
+            <div class="user-info">
+                <span id="userDisplay"></span>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+        <h3 style="margin-bottom:10px;">用户列表</h3>
+        <p id="listMsg" class="message"></p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>用户名</th>
+                    <th>邮箱</th>
+                    <th>角色</th>
+                </tr>
+            </thead>
+            <tbody id="userTable"></tbody>
+        </table>
+    </div>
+    <script>
+        var currentUser = null;
+        try {
+            currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        } catch (e) {}
+
+        if (!currentUser || !currentUser.id) {
+            window.location.href = 'index.html';
+        } else {
+            var roleText = currentUser.role === 'ADMIN' ? '超级管理员' : '普通用户';
+            var roleClass = currentUser.role === 'ADMIN' ? 'role-admin' : 'role-user';
+            document.getElementById('userDisplay').innerHTML =
+                '欢迎，<strong>' + currentUser.username + '</strong> <span class="role-tag ' + roleClass + '">' + roleText + '</span> &nbsp; ';
+
+            fetch('/api/user/list?userId=' + currentUser.id + '&userRole=' + currentUser.role)
+                .then(res => res.json())
+                .then(result => {
+                    var msg = document.getElementById('listMsg');
+                    if (!result.success) {
+                        msg.textContent = result.message;
+                        msg.className = 'message error';
+                        return;
+                    }
+                    var tbody = document.getElementById('userTable');
+                    result.data.forEach(function(u) {
+                        var rc = u.role === 'ADMIN' ? 'role-admin' : 'role-user';
+                        var rt = u.role === 'ADMIN' ? '超级管理员' : '普通用户';
+                        var tr = document.createElement('tr');
+                        tr.innerHTML = '<td>' + u.id + '</td><td>' + u.username + '</td><td>' + u.email + '</td><td><span class="role-tag ' + rc + '">' + rt + '</span></td>';
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

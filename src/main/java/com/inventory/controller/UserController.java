@@ -37,9 +37,15 @@ public class UserController {
     }
 
     @GetMapping("/list")
-    public Map<String, Object> list() {
+    public Map<String, Object> list(@RequestParam(required = false) Integer userId,
+                                    @RequestParam(required = false) String userRole) {
         Map<String, Object> result = new HashMap<>();
-        List<User> list = userService.findAll();
+        if (userId == null || userRole == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
+        List<User> list = userService.findByPermission(userId, userRole);
         result.put("success", true);
         result.put("data", list);
         return result;

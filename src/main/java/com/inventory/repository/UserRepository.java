@@ -20,11 +20,12 @@ public class UserRepository {
         u.setUsername(rs.getString("username"));
         u.setPassword(rs.getString("password"));
         u.setEmail(rs.getString("email"));
+        u.setRole(rs.getString("role"));
         return u;
     };
 
     public int save(User user) {
-        return jdbc.update("INSERT INTO t_user (username, password, email) VALUES (?, ?, ?)",
+        return jdbc.update("INSERT INTO t_user (username, password, email, role) VALUES (?, ?, ?, 'USER')",
                 user.getUsername(), user.getPassword(), user.getEmail());
     }
 
@@ -35,5 +36,10 @@ public class UserRepository {
 
     public List<User> findAll() {
         return jdbc.query("SELECT * FROM t_user", rowMapper);
+    }
+
+    public User findById(Integer id) {
+        List<User> list = jdbc.query("SELECT * FROM t_user WHERE id = ?", rowMapper, id);
+        return list.isEmpty() ? null : list.get(0);
     }
 }
