@@ -20,6 +20,7 @@ public class UserRepository {
         u.setUsername(rs.getString("username"));
         u.setPassword(rs.getString("password"));
         u.setEmail(rs.getString("email"));
+        u.setDeptId(rs.getInt("dept_id"));
         u.setRole(rs.getString("role"));
         return u;
     };
@@ -41,5 +42,9 @@ public class UserRepository {
     public User findById(Integer id) {
         List<User> list = jdbc.query("SELECT * FROM t_user WHERE id = ?", rowMapper, id);
         return list.isEmpty() ? null : list.get(0);
+    }
+
+    public int countByDeptId(Integer deptId) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM t_user WHERE dept_id = ?", Integer.class, deptId);
     }
 }

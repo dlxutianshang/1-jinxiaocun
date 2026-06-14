@@ -20,10 +20,13 @@ public class DeptRepository {
 
     private final RowMapper<Dept> rowMapper = (rs, rowNum) -> {
         Dept d = new Dept();
-        d.setId(rs.getInt("id"));
+        d.setDeptId(rs.getInt("id"));
         d.setParentId(rs.getInt("parent_id"));
-        d.setName(rs.getString("name"));
-        d.setOrderNum(rs.getInt("order_num"));
+        d.setDeptName(rs.getString("name"));
+        d.setLeader(rs.getString("leader"));
+        d.setPhone(rs.getString("phone"));
+        d.setEmail(rs.getString("email"));
+        d.setSort(rs.getInt("order_num"));
         d.setStatus(rs.getString("status"));
         Timestamp ts = rs.getTimestamp("create_time");
         d.setCreateTime(ts != null ? sdf.format(ts) : "");
@@ -34,10 +37,10 @@ public class DeptRepository {
         return jdbc.query("SELECT * FROM t_dept ORDER BY order_num ASC, id ASC", rowMapper);
     }
 
-    public List<Dept> findByCondition(String name, String status) {
+    public List<Dept> findByCondition(String deptName, String status) {
         StringBuilder sql = new StringBuilder("SELECT * FROM t_dept WHERE 1=1");
-        if (name != null && !name.trim().isEmpty()) {
-            sql.append(" AND name LIKE '%").append(name.trim()).append("%'");
+        if (deptName != null && !deptName.trim().isEmpty()) {
+            sql.append(" AND name LIKE '%").append(deptName.trim()).append("%'");
         }
         if (status != null && !status.trim().isEmpty() && !"all".equals(status)) {
             sql.append(" AND status = '").append(status).append("'");
@@ -46,30 +49,63 @@ public class DeptRepository {
         return jdbc.query(sql.toString(), rowMapper);
     }
 
+    public List<Dept> findByPage(String deptName, String status, int pageNo, int pageSize) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM t_dept WHERE 1=1");
+        if (deptName != null && !deptName.trim().isEmpty()) {
+            sql.append(" AND name LIKE '%").append(deptName.trim()).append("%'");
+        }
+        if (status != null && !status.trim().isEmpty() && !"all".equals(status)) {
+            sql.append(" AND status = '").append(status).append("'");
+        }
+        sql.append(" ORDER BY order_num ASC, id ASC LIMIT ").append((pageNo - 1) * pageSize).append(", ").append(pageSize);
+        return jdbc.query(sql.toString(), rowMapper);
+    }
+
+    public int countByCondition(String deptName, String status) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM t_dept WHERE 1=1");
+        if (deptName != null && !deptName.trim().isEmpty()) {
+            sql.append(" AND name LIKE '%").append(deptName.trim()).append("%'");
+        }
+        if (status != null && !status.trim().isEmpty() && !"all".equals(status)) {
+            sql.append(" AND status = '").append(status).append("'");
+        }
+        return jdbc.queryForObject(sql.toString(), Integer.class);
+    }
+
     public Dept findById(Integer id) {
         List<Dept> list = jdbc.query("SELECT * FROM t_dept WHERE id = ?", rowMapper, id);
         return list.isEmpty() ? null : list.get(0);
     }
 
     public int save(Dept dept) {
-        return jdbc.update("INSERT INTO t_dept (parent_id, name, order_num, status) VALUES (?, ?, ?, ?)",
+        return jdbc.update("INSERT INTO t_dept (parent_id, name, leader, phone, email, order_num, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 dept.getParentId() == null ? 0 : dept.getParentId(),
-                dept.getName(),
-                dept.getOrderNum() == null ? 0 : dept.getOrderNum(),
+                dept.getDeptName(),
+                dept.getLeader(),
+                dept.getPhone(),
+                dept.getEmail(),
+                dept.getSort() == null ? 0 : dept.getSort(),
                 dept.getStatus() == null ? "0" : dept.getStatus());
     }
 
     public int update(Dept dept) {
-        return jdbc.update("UPDATE t_dept SET parent_id = ?, name = ?, order_num = ?, status = ? WHERE id = ?",
+        return jdbc.update("UPDATE t_dept SET parent_id = ?, name = ?, leader = ?, phone = ?, email = ?, order_num = ?, status = ? WHERE id = ?",
                 dept.getParentId() == null ? 0 : dept.getParentId(),
-                dept.getName(),
-                dept.getOrderNum() == null ? 0 : dept.getOrderNum(),
+                dept.getDeptName(),
+                dept.getLeader(),
+                dept.getPhone(),
+                dept.getEmail(),
+                dept.getSort() == null ? 0 : dept.getSort(),
                 dept.getStatus() == null ? "0" : dept.getStatus(),
-                dept.getId());
+                dept.getDeptId());
     }
 
-    public int updateOrderNum(Integer id, Integer orderNum) {
-        return jdbc.update("UPDATE t_dept SET order_num = ? WHERE id = ?", orderNum, id);
+    public int updateStatus(Integer id, String status) {
+        return jdbc.update("UPDATE t_dept SET status = ? WHERE id = ?", status, id);
+    }
+
+    public int updateSort(Integer id, Integer sort) {
+        return jdbc.update("UPDATE t_dept SET order_num = ? WHERE id = ?", sort, id);
     }
 
     public int delete(Integer id) {

@@ -5,6 +5,7 @@ public class User {
     private String username;
     private String password;
     private String email;
+    private Integer deptId;
     private String role;
 
     public Integer getId() { return id; }
@@ -15,6 +16,8 @@ public class User {
     public void setPassword(String password) { this.password = password; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    public Integer getDeptId() { return deptId; }
+    public void setDeptId(Integer deptId) { this.deptId = deptId; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
 }

@@ -5,85 +5,120 @@
     <title>部门管理</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-    <div class="container dept-container">
-        <div class="header">
-            <h2>部门管理</h2>
-            <div class="user-info">
-                <span id="userDisplay"></span>
-                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+<body class="layout-body">
+    <div class="layout">
+        <div class="sidebar">
+            <div class="logo">
+                <h2>进销存系统</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html" class="menu-item">🏠 首页</a></li>
+                <li><a href="departments.html" class="menu-item active">🏢 部门管理</a></li>
+                <li><a href="users.html" class="menu-item">👥 用户管理</a></li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <div class="top-header">
+                <div class="breadcrumb">系统管理 / 部门管理</div>
+                <div class="user-area">
+                    <span id="userDisplay"></span>
+                    <button class="btn btn-danger btn-sm" onclick="logout()">退出登录</button>
+                </div>
+            </div>
+            <div class="page-content">
+                <div class="card">
+                    <div class="search-bar">
+                        <div class="search-item">
+                            <label>部门名称：</label>
+                            <input type="text" id="searchName" placeholder="请输入部门名称" class="search-input">
+                        </div>
+                        <div class="search-item">
+                            <label>状态：</label>
+                            <select id="searchStatus" class="search-select">
+                                <option value="">部门状态</option>
+                                <option value="all">全部</option>
+                                <option value="0">正常</option>
+                                <option value="1">禁用</option>
+                            </select>
+                        </div>
+                        <div class="search-actions">
+                            <button class="btn btn-primary" onclick="searchDept()">🔍 搜索</button>
+                            <button class="btn btn-default" onclick="resetSearch()">🔄 重置</button>
+                        </div>
+                    </div>
+
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="openAddModal(0)">+ 新增</button>
+                        <button class="btn btn-warning" onclick="saveOrder()">💾 保存排序</button>
+                        <button class="btn btn-default" id="toggleBtn" onclick="toggleAll()">📂 展开/折叠</button>
+                    </div>
+
+                    <p id="listMsg" class="message"></p>
+
+                    <table class="table dept-table">
+                        <thead>
+                            <tr>
+                                <th width="30%">部门名称</th>
+                                <th width="10%">排序</th>
+                                <th width="10%">状态</th>
+                                <th width="18%">创建时间</th>
+                                <th width="32%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deptTableBody"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-
-        <div class="search-bar">
-            <div class="search-item">
-                <label>部门名称：</label>
-                <input type="text" id="searchName" placeholder="请输入部门名称" class="search-input">
-            </div>
-            <div class="search-item">
-                <label>状态：</label>
-                <select id="searchStatus" class="search-select">
-                    <option value="">部门状态</option>
-                    <option value="all">全部</option>
-                    <option value="0">正常</option>
-                    <option value="1">禁用</option>
-                </select>
-            </div>
-            <div class="search-actions">
-                <button class="btn btn-primary" onclick="searchDept()">搜索</button>
-                <button class="btn btn-default" onclick="resetSearch()">重置</button>
-            </div>
-        </div>
-
-        <div class="toolbar">
-            <button class="btn btn-primary" onclick="openAddModal()">+ 新增</button>
-            <button class="btn btn-warning" onclick="saveOrder()">保存排序</button>
-            <button class="btn btn-default" id="toggleBtn" onclick="toggleAll()">展开/折叠</button>
-        </div>
-
-        <p id="listMsg" class="message"></p>
-
-        <table class="table dept-table">
-            <thead>
-                <tr>
-                    <th width="30%">部门名称</th>
-                    <th width="12%">排序</th>
-                    <th width="12%">状态</th>
-                    <th width="20%">创建时间</th>
-                    <th width="26%">操作</th>
-                </tr>
-            </thead>
-            <tbody id="deptTableBody"></tbody>
-        </table>
     </div>
 
     <div id="deptModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content modal-large">
             <div class="modal-header">
                 <span id="modalTitle">新增部门</span>
                 <span class="close" onclick="closeModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>上级部门：</label>
-                    <select id="formParentId" class="form-input">
-                        <option value="0">顶级部门</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>上级部门：</label>
+                        <select id="formParentId" class="form-input">
+                            <option value="0">顶级部门</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>部门名称：<span class="required">*</span></label>
+                        <input type="text" id="formDeptName" class="form-input" placeholder="请输入部门名称">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>部门名称：<span class="required">*</span></label>
-                    <input type="text" id="formName" class="form-input" placeholder="请输入部门名称">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>负责人：</label>
+                        <input type="text" id="formLeader" class="form-input" placeholder="请输入负责人">
+                    </div>
+                    <div class="form-group">
+                        <label>联系电话：</label>
+                        <input type="text" id="formPhone" class="form-input" placeholder="请输入联系电话">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>排序：</label>
-                    <input type="number" id="formOrderNum" class="form-input" value="0" min="0">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>邮箱：</label>
+                        <input type="email" id="formEmail" class="form-input" placeholder="请输入邮箱">
+                    </div>
+                    <div class="form-group">
+                        <label>排序：</label>
+                        <input type="number" id="formSort" class="form-input" value="0" min="0">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>状态：</label>
-                    <select id="formStatus" class="form-input">
-                        <option value="0">正常</option>
-                        <option value="1">禁用</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>状态：</label>
+                        <select id="formStatus" class="form-input">
+                            <option value="0">正常</option>
+                            <option value="1">禁用</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -109,7 +144,6 @@
         }
 
         var deptTree = [];
-        var deptFlat = [];
         var expandedIds = new Set();
         var allExpanded = false;
         var editMode = false;
@@ -132,16 +166,29 @@
             }
         }
 
+        function initDefaultExpand() {
+            expandedIds.clear();
+            if (deptTree && deptTree.length > 0) {
+                deptTree.forEach(function(d) {
+                    if (d.children && d.children.length > 0) {
+                        expandedIds.add(d.deptId);
+                    }
+                });
+            }
+        }
+
         function loadDeptTree() {
             var name = document.getElementById('searchName').value;
             var status = document.getElementById('searchStatus').value;
-            var url = '/api/dept/tree';
-            var params = [];
-            if (name) params.push('name=' + encodeURIComponent(name));
-            if (status) params.push('status=' + encodeURIComponent(status));
-            if (params.length > 0) url += '?' + params.join('&');
+            var params = {};
+            if (name) params.deptName = name;
+            if (status) params.status = status;
 
-            fetch(url)
+            fetch('/api/system/dept/tree', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params)
+            })
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
                     if (!result.success) {
@@ -149,21 +196,13 @@
                         return;
                     }
                     deptTree = result.data || [];
+                    if (expandedIds.size === 0) {
+                        initDefaultExpand();
+                    }
                     renderTree();
                 })
                 .catch(function() {
                     showMsg('加载失败', 'error');
-                });
-        }
-
-        function loadDeptFlat(callback) {
-            fetch('/api/dept/list')
-                .then(function(res) { return res.json(); })
-                .then(function(result) {
-                    if (result.success) {
-                        deptFlat = result.data || [];
-                        if (callback) callback();
-                    }
                 });
         }
 
@@ -176,34 +215,36 @@
         function renderLevel(list, tbody, level) {
             list.forEach(function(dept) {
                 var hasChildren = dept.children && dept.children.length > 0;
-                var isExpanded = expandedIds.has(dept.id);
+                var isExpanded = expandedIds.has(dept.deptId);
                 var tr = document.createElement('tr');
-                tr.setAttribute('data-id', dept.id);
+                tr.setAttribute('data-id', dept.deptId);
 
                 var nameHtml = '';
-                nameHtml += '<span class="tree-indent" style="padding-left:' + (level * 24) + 'px;"></span>';
+                nameHtml += '<span class="tree-indent" style="padding-left:' + (level * 28) + 'px;"></span>';
                 if (hasChildren) {
-                    nameHtml += '<span class="tree-toggle" onclick="toggleNode(' + dept.id + ')">' +
+                    nameHtml += '<span class="tree-toggle" onclick="toggleNode(' + dept.deptId + ')">' +
                         (isExpanded ? '▼' : '▶') + '</span>';
                 } else {
                     nameHtml += '<span class="tree-placeholder"></span>';
                 }
-                nameHtml += '<span class="dept-name">' + dept.name + '</span>';
+                nameHtml += '<span class="dept-name">' + dept.deptName + '</span>';
 
                 var statusClass = dept.status === '0' ? 'status-normal' : 'status-disabled';
                 var statusText = dept.status === '0' ? '正常' : '禁用';
 
                 var isRoot = dept.parentId === 0 || dept.parentId === null;
                 var actionHtml = '';
-                actionHtml += '<a class="link-btn link-edit" onclick="openEditModal(' + dept.id + ')">✏️ 修改</a>';
-                actionHtml += '<a class="link-btn link-add" onclick="openAddChildModal(' + dept.id + ', \'' + dept.name + '\')">➕ 新增</a>';
+                actionHtml += '<a class="link-btn link-edit" onclick="openEditModal(' + dept.deptId + ')">✏️ 修改</a>';
+                actionHtml += '<a class="link-btn link-add" onclick="openAddModal(' + dept.deptId + ', \'' + dept.deptName + '\')">➕ 新增</a>';
                 if (!isRoot) {
-                    actionHtml += '<a class="link-btn link-delete" onclick="deleteDept(' + dept.id + ')">🗑️ 删除</a>';
+                    actionHtml += '<a class="link-btn link-delete" onclick="deleteDept(' + dept.deptId + ')">🗑️ 删除</a>';
                 }
+                actionHtml += '<a class="link-btn link-status" onclick="changeStatus(' + dept.deptId + ', \'' + (dept.status === '0' ? '1' : '0') + '\')">' +
+                    (dept.status === '0' ? '⏸️ 禁用' : '▶️ 启用') + '</a>';
 
                 tr.innerHTML =
                     '<td>' + nameHtml + '</td>' +
-                    '<td><input type="number" class="order-input" value="' + (dept.orderNum || 0) + '" min="0" data-id="' + dept.id + '"></td>' +
+                    '<td><input type="number" class="order-input" value="' + (dept.sort || 0) + '" min="0" data-id="' + dept.deptId + '"></td>' +
                     '<td><span class="status-tag ' + statusClass + '">' + statusText + '</span></td>' +
                     '<td>' + (dept.createTime || '') + '</td>' +
                     '<td>' + actionHtml + '</td>';
@@ -236,19 +277,21 @@
         function addAllIds(list) {
             list.forEach(function(dept) {
                 if (dept.children && dept.children.length > 0) {
-                    expandedIds.add(dept.id);
+                    expandedIds.add(dept.deptId);
                     addAllIds(dept.children);
                 }
             });
         }
 
         function searchDept() {
+            expandedIds.clear();
             loadDeptTree();
         }
 
         function resetSearch() {
             document.getElementById('searchName').value = '';
             document.getElementById('searchStatus').value = '';
+            expandedIds.clear();
             loadDeptTree();
         }
 
@@ -257,13 +300,13 @@
             select.innerHTML = '<option value="0">顶级部门</option>';
             function addOptions(list, level) {
                 list.forEach(function(dept) {
-                    if (excludeId && dept.id === excludeId) return;
+                    if (excludeId && dept.deptId === excludeId) return;
                     var prefix = '';
                     for (var i = 0; i < level; i++) prefix += '　';
                     var opt = document.createElement('option');
-                    opt.value = dept.id;
-                    opt.textContent = prefix + dept.name;
-                    if (selectedId && selectedId == dept.id) opt.selected = true;
+                    opt.value = dept.deptId;
+                    opt.textContent = prefix + dept.deptName;
+                    if (selectedId && selectedId == dept.deptId) opt.selected = true;
                     select.appendChild(opt);
                     if (dept.children && dept.children.length > 0) {
                         addOptions(dept.children, level + 1);
@@ -273,30 +316,24 @@
             addOptions(deptTree, 0);
         }
 
-        function openAddModal() {
+        function openAddModal(parentId, parentName) {
             editMode = false;
             editingId = null;
-            document.getElementById('modalTitle').textContent = '新增部门';
-            document.getElementById('formName').value = '';
-            document.getElementById('formOrderNum').value = '0';
+            var title = '新增部门';
+            if (parentName) title += ' - 父级：' + parentName;
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('formDeptName').value = '';
+            document.getElementById('formLeader').value = '';
+            document.getElementById('formPhone').value = '';
+            document.getElementById('formEmail').value = '';
+            document.getElementById('formSort').value = '0';
             document.getElementById('formStatus').value = '0';
-            buildParentOptions(0, null);
-            document.getElementById('deptModal').style.display = 'block';
-        }
-
-        function openAddChildModal(parentId, parentName) {
-            editMode = false;
-            editingId = null;
-            document.getElementById('modalTitle').textContent = '新增部门 - 父级：' + parentName;
-            document.getElementById('formName').value = '';
-            document.getElementById('formOrderNum').value = '0';
-            document.getElementById('formStatus').value = '0';
-            buildParentOptions(parentId, null);
+            buildParentOptions(parentId || 0, null);
             document.getElementById('deptModal').style.display = 'block';
         }
 
         function openEditModal(id) {
-            fetch('/api/dept/' + id)
+            fetch('/api/system/dept/' + id)
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
                     if (!result.success || !result.data) {
@@ -307,8 +344,11 @@
                     editMode = true;
                     editingId = id;
                     document.getElementById('modalTitle').textContent = '修改部门';
-                    document.getElementById('formName').value = dept.name;
-                    document.getElementById('formOrderNum').value = dept.orderNum || 0;
+                    document.getElementById('formDeptName').value = dept.deptName || '';
+                    document.getElementById('formLeader').value = dept.leader || '';
+                    document.getElementById('formPhone').value = dept.phone || '';
+                    document.getElementById('formEmail').value = dept.email || '';
+                    document.getElementById('formSort').value = dept.sort || 0;
                     document.getElementById('formStatus').value = dept.status || '0';
                     buildParentOptions(dept.parentId || 0, id);
                     document.getElementById('deptModal').style.display = 'block';
@@ -320,23 +360,26 @@
         }
 
         function submitForm() {
-            var name = document.getElementById('formName').value.trim();
+            var name = document.getElementById('formDeptName').value.trim();
             if (!name) {
                 showMsg('请输入部门名称', 'error');
                 return;
             }
             var data = {
                 parentId: parseInt(document.getElementById('formParentId').value) || 0,
-                name: name,
-                orderNum: parseInt(document.getElementById('formOrderNum').value) || 0,
+                deptName: name,
+                leader: document.getElementById('formLeader').value.trim(),
+                phone: document.getElementById('formPhone').value.trim(),
+                email: document.getElementById('formEmail').value.trim(),
+                sort: parseInt(document.getElementById('formSort').value) || 0,
                 status: document.getElementById('formStatus').value
             };
-            var url, method;
+            var url;
             if (editMode) {
-                data.id = editingId;
-                url = '/api/dept/update';
+                data.deptId = editingId;
+                url = '/api/system/dept/update';
             } else {
-                url = '/api/dept/add';
+                url = '/api/system/dept/create';
             }
             fetch(url, {
                 method: 'POST',
@@ -349,20 +392,39 @@
                     if (result.success) {
                         closeModal();
                         loadDeptTree();
-                        loadDeptFlat();
                     }
                 });
         }
 
         function deleteDept(id) {
-            if (!confirm('确定要删除该部门吗？')) return;
-            fetch('/api/dept/delete/' + id, { method: 'POST' })
+            if (!confirm('确定要删除该部门吗？\n注意：存在子部门或已关联用户的部门不可删除。')) return;
+            fetch('/api/system/dept/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deptId: id })
+            })
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
                     showMsg(result.message, result.success ? 'success' : 'error');
                     if (result.success) {
                         loadDeptTree();
-                        loadDeptFlat();
+                    }
+                });
+        }
+
+        function changeStatus(id, status) {
+            var action = status === '0' ? '启用' : '禁用';
+            if (!confirm('确定要' + action + '该部门吗？')) return;
+            fetch('/api/system/dept/changeStatus', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ deptId: id, status: status })
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    showMsg(result.message, result.success ? 'success' : 'error');
+                    if (result.success) {
+                        loadDeptTree();
                     }
                 });
         }
@@ -372,11 +434,11 @@
             var list = [];
             inputs.forEach(function(inp) {
                 list.push({
-                    id: parseInt(inp.getAttribute('data-id')),
-                    orderNum: parseInt(inp.value) || 0
+                    deptId: parseInt(inp.getAttribute('data-id')),
+                    sort: parseInt(inp.value) || 0
                 });
             });
-            fetch('/api/dept/saveOrder', {
+            fetch('/api/system/dept/saveSortBatch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(list)
@@ -390,8 +452,14 @@
                 });
         }
 
+        window.onclick = function(event) {
+            var modal = document.getElementById('deptModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        };
+
         loadDeptTree();
-        loadDeptFlat();
     </script>
 </body>
 </html>

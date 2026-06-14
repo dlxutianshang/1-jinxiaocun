@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS t_user (
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(100) NOT NULL,
     email VARCHAR(100),
+    dept_id INT DEFAULT 0,
     role VARCHAR(20) NOT NULL DEFAULT 'USER'
 );
 
@@ -20,6 +21,9 @@ CREATE TABLE IF NOT EXISTS t_dept (
     id INT AUTO_INCREMENT PRIMARY KEY,
     parent_id INT DEFAULT 0,
     name VARCHAR(100) NOT NULL,
+    leader VARCHAR(50),
+    phone VARCHAR(20),
+    email VARCHAR(100),
     order_num INT DEFAULT 0,
     status VARCHAR(10) DEFAULT '0',
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP

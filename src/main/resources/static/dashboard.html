@@ -5,33 +5,46 @@
     <title>进销存系统 - 主页</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>进销存系统</h2>
-            <div class="user-info">
-                <span id="userDisplay"></span>
-                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+<body class="layout-body">
+    <div class="layout">
+        <div class="sidebar">
+            <div class="logo">
+                <h2>进销存系统</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html" class="menu-item active">🏠 首页</a></li>
+                <li><a href="departments.html" class="menu-item">🏢 部门管理</a></li>
+                <li><a href="users.html" class="menu-item">👥 用户管理</a></li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <div class="top-header">
+                <div class="breadcrumb">首页</div>
+                <div class="user-area">
+                    <span id="userDisplay"></span>
+                    <button class="btn btn-danger btn-sm" onclick="logout()">退出登录</button>
+                </div>
+            </div>
+            <div class="page-content">
+                <div class="card">
+                    <h3 style="margin-bottom:15px;">用户列表</h3>
+                    <p id="listMsg" class="message"></p>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTable"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
-        <div style="margin-bottom:15px;">
-            <a class="btn btn-primary" href="departments.html" style="margin:0;">部门管理</a>
-            <a class="btn btn-secondary" href="users.html" style="margin:0 10px;">用户列表</a>
-        </div>
-        <h3 style="margin-bottom:10px;">用户列表</h3>
-        <p id="listMsg" class="message"></p>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>用户名</th>
-                    <th>邮箱</th>
-                    <th>角色</th>
-                </tr>
-            </thead>
-            <tbody id="userTable"></tbody>
-        </table>
     </div>
+
     <script>
         var currentUser = null;
         try {
@@ -47,8 +60,8 @@
                 '欢迎，<strong>' + currentUser.username + '</strong> <span class="role-tag ' + roleClass + '">' + roleText + '</span> &nbsp; ';
 
             fetch('/api/user/list?userId=' + currentUser.id + '&userRole=' + currentUser.role)
-                .then(res => res.json())
-                .then(result => {
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
                     var msg = document.getElementById('listMsg');
                     if (!result.success) {
                         msg.textContent = result.message;
