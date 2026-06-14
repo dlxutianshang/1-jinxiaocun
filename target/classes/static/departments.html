@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>部门管理</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container dept-container">
+        <div class="header">
+            <h2>部门管理</h2>
+            <div class="user-info">
+                <span id="userDisplay"></span>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+
+        <div class="search-bar">
+            <div class="search-item">
+                <label>部门名称：</label>
+                <input type="text" id="searchName" placeholder="请输入部门名称" class="search-input">
+            </div>
+            <div class="search-item">
+                <label>状态：</label>
+                <select id="searchStatus" class="search-select">
+                    <option value="">部门状态</option>
+                    <option value="all">全部</option>
+                    <option value="0">正常</option>
+                    <option value="1">禁用</option>
+                </select>
+            </div>
+            <div class="search-actions">
+                <button class="btn btn-primary" onclick="searchDept()">搜索</button>
+                <button class="btn btn-default" onclick="resetSearch()">重置</button>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="openAddModal()">+ 新增</button>
+            <button class="btn btn-warning" onclick="saveOrder()">保存排序</button>
+            <button class="btn btn-default" id="toggleBtn" onclick="toggleAll()">展开/折叠</button>
+        </div>
+
+        <p id="listMsg" class="message"></p>
+
+        <table class="table dept-table">
+            <thead>
+                <tr>
+                    <th width="30%">部门名称</th>
+                    <th width="12%">排序</th>
+                    <th width="12%">状态</th>
+                    <th width="20%">创建时间</th>
+                    <th width="26%">操作</th>
+                </tr>
+            </thead>
+            <tbody id="deptTableBody"></tbody>
+        </table>
+    </div>
+
+    <div id="deptModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modalTitle">新增部门</span>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>上级部门：</label>
+                    <select id="formParentId" class="form-input">
+                        <option value="0">顶级部门</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>部门名称：<span class="required">*</span></label>
+                    <input type="text" id="formName" class="form-input" placeholder="请输入部门名称">
+                </div>
+                <div class="form-group">
+                    <label>排序：</label>
+                    <input type="number" id="formOrderNum" class="form-input" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>状态：</label>
+                    <select id="formStatus" class="form-input">
+                        <option value="0">正常</option>
+                        <option value="1">禁用</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitForm()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var currentUser = null;
+        try {
+            currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        } catch (e) {}
+
+        if (!currentUser || !currentUser.id) {
+            window.location.href = 'index.html';
+        } else {
+            var roleText = currentUser.role === 'ADMIN' ? '超级管理员' : '普通用户';
+            var roleClass = currentUser.role === 'ADMIN' ? 'role-admin' : 'role-user';
+            document.getElementById('userDisplay').innerHTML =
+                '欢迎，<strong>' + currentUser.username + '</strong> <span class="role-tag ' + roleClass + '">' + roleText + '</span> &nbsp; ';
+        }
+
+        var deptTree = [];
+        var deptFlat = [];
+        var expandedIds = new Set();
+        var allExpanded = false;
+        var editMode = false;
+        var editingId = null;
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+
+        function showMsg(text, type) {
+            var msg = document.getElementById('listMsg');
+            msg.textContent = text;
+            msg.className = 'message ' + (type || 'success');
+            if (text) {
+                setTimeout(function() {
+                    msg.textContent = '';
+                    msg.className = 'message';
+                }, 3000);
+            }
+        }
+
+        function loadDeptTree() {
+            var name = document.getElementById('searchName').value;
+            var status = document.getElementById('searchStatus').value;
+            var url = '/api/dept/tree';
+            var params = [];
+            if (name) params.push('name=' + encodeURIComponent(name));
+            if (status) params.push('status=' + encodeURIComponent(status));
+            if (params.length > 0) url += '?' + params.join('&');
+
+            fetch(url)
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (!result.success) {
+                        showMsg(result.message, 'error');
+                        return;
+                    }
+                    deptTree = result.data || [];
+                    renderTree();
+                })
+                .catch(function() {
+                    showMsg('加载失败', 'error');
+                });
+        }
+
+        function loadDeptFlat(callback) {
+            fetch('/api/dept/list')
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        deptFlat = result.data || [];
+                        if (callback) callback();
+                    }
+                });
+        }
+
+        function renderTree() {
+            var tbody = document.getElementById('deptTableBody');
+            tbody.innerHTML = '';
+            renderLevel(deptTree, tbody, 0);
+        }
+
+        function renderLevel(list, tbody, level) {
+            list.forEach(function(dept) {
+                var hasChildren = dept.children && dept.children.length > 0;
+                var isExpanded = expandedIds.has(dept.id);
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-id', dept.id);
+
+                var nameHtml = '';
+                nameHtml += '<span class="tree-indent" style="padding-left:' + (level * 24) + 'px;"></span>';
+                if (hasChildren) {
+                    nameHtml += '<span class="tree-toggle" onclick="toggleNode(' + dept.id + ')">' +
+                        (isExpanded ? '▼' : '▶') + '</span>';
+                } else {
+                    nameHtml += '<span class="tree-placeholder"></span>';
+                }
+                nameHtml += '<span class="dept-name">' + dept.name + '</span>';
+
+                var statusClass = dept.status === '0' ? 'status-normal' : 'status-disabled';
+                var statusText = dept.status === '0' ? '正常' : '禁用';
+
+                var isRoot = dept.parentId === 0 || dept.parentId === null;
+                var actionHtml = '';
+                actionHtml += '<a class="link-btn link-edit" onclick="openEditModal(' + dept.id + ')">✏️ 修改</a>';
+                actionHtml += '<a class="link-btn link-add" onclick="openAddChildModal(' + dept.id + ', \'' + dept.name + '\')">➕ 新增</a>';
+                if (!isRoot) {
+                    actionHtml += '<a class="link-btn link-delete" onclick="deleteDept(' + dept.id + ')">🗑️ 删除</a>';
+                }
+
+                tr.innerHTML =
+                    '<td>' + nameHtml + '</td>' +
+                    '<td><input type="number" class="order-input" value="' + (dept.orderNum || 0) + '" min="0" data-id="' + dept.id + '"></td>' +
+                    '<td><span class="status-tag ' + statusClass + '">' + statusText + '</span></td>' +
+                    '<td>' + (dept.createTime || '') + '</td>' +
+                    '<td>' + actionHtml + '</td>';
+                tbody.appendChild(tr);
+
+                if (hasChildren && isExpanded) {
+                    renderLevel(dept.children, tbody, level + 1);
+                }
+            });
+        }
+
+        function toggleNode(id) {
+            if (expandedIds.has(id)) {
+                expandedIds.delete(id);
+            } else {
+                expandedIds.add(id);
+            }
+            renderTree();
+        }
+
+        function toggleAll() {
+            allExpanded = !allExpanded;
+            expandedIds.clear();
+            if (allExpanded) {
+                addAllIds(deptTree);
+            }
+            renderTree();
+        }
+
+        function addAllIds(list) {
+            list.forEach(function(dept) {
+                if (dept.children && dept.children.length > 0) {
+                    expandedIds.add(dept.id);
+                    addAllIds(dept.children);
+                }
+            });
+        }
+
+        function searchDept() {
+            loadDeptTree();
+        }
+
+        function resetSearch() {
+            document.getElementById('searchName').value = '';
+            document.getElementById('searchStatus').value = '';
+            loadDeptTree();
+        }
+
+        function buildParentOptions(selectedId, excludeId) {
+            var select = document.getElementById('formParentId');
+            select.innerHTML = '<option value="0">顶级部门</option>';
+            function addOptions(list, level) {
+                list.forEach(function(dept) {
+                    if (excludeId && dept.id === excludeId) return;
+                    var prefix = '';
+                    for (var i = 0; i < level; i++) prefix += '　';
+                    var opt = document.createElement('option');
+                    opt.value = dept.id;
+                    opt.textContent = prefix + dept.name;
+                    if (selectedId && selectedId == dept.id) opt.selected = true;
+                    select.appendChild(opt);
+                    if (dept.children && dept.children.length > 0) {
+                        addOptions(dept.children, level + 1);
+                    }
+                });
+            }
+            addOptions(deptTree, 0);
+        }
+
+        function openAddModal() {
+            editMode = false;
+            editingId = null;
+            document.getElementById('modalTitle').textContent = '新增部门';
+            document.getElementById('formName').value = '';
+            document.getElementById('formOrderNum').value = '0';
+            document.getElementById('formStatus').value = '0';
+            buildParentOptions(0, null);
+            document.getElementById('deptModal').style.display = 'block';
+        }
+
+        function openAddChildModal(parentId, parentName) {
+            editMode = false;
+            editingId = null;
+            document.getElementById('modalTitle').textContent = '新增部门 - 父级：' + parentName;
+            document.getElementById('formName').value = '';
+            document.getElementById('formOrderNum').value = '0';
+            document.getElementById('formStatus').value = '0';
+            buildParentOptions(parentId, null);
+            document.getElementById('deptModal').style.display = 'block';
+        }
+
+        function openEditModal(id) {
+            fetch('/api/dept/' + id)
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (!result.success || !result.data) {
+                        showMsg('获取部门信息失败', 'error');
+                        return;
+                    }
+                    var dept = result.data;
+                    editMode = true;
+                    editingId = id;
+                    document.getElementById('modalTitle').textContent = '修改部门';
+                    document.getElementById('formName').value = dept.name;
+                    document.getElementById('formOrderNum').value = dept.orderNum || 0;
+                    document.getElementById('formStatus').value = dept.status || '0';
+                    buildParentOptions(dept.parentId || 0, id);
+                    document.getElementById('deptModal').style.display = 'block';
+                });
+        }
+
+        function closeModal() {
+            document.getElementById('deptModal').style.display = 'none';
+        }
+
+        function submitForm() {
+            var name = document.getElementById('formName').value.trim();
+            if (!name) {
+                showMsg('请输入部门名称', 'error');
+                return;
+            }
+            var data = {
+                parentId: parseInt(document.getElementById('formParentId').value) || 0,
+                name: name,
+                orderNum: parseInt(document.getElementById('formOrderNum').value) || 0,
+                status: document.getElementById('formStatus').value
+            };
+            var url, method;
+            if (editMode) {
+                data.id = editingId;
+                url = '/api/dept/update';
+            } else {
+                url = '/api/dept/add';
+            }
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    showMsg(result.message, result.success ? 'success' : 'error');
+                    if (result.success) {
+                        closeModal();
+                        loadDeptTree();
+                        loadDeptFlat();
+                    }
+                });
+        }
+
+        function deleteDept(id) {
+            if (!confirm('确定要删除该部门吗？')) return;
+            fetch('/api/dept/delete/' + id, { method: 'POST' })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    showMsg(result.message, result.success ? 'success' : 'error');
+                    if (result.success) {
+                        loadDeptTree();
+                        loadDeptFlat();
+                    }
+                });
+        }
+
+        function saveOrder() {
+            var inputs = document.querySelectorAll('.order-input');
+            var list = [];
+            inputs.forEach(function(inp) {
+                list.push({
+                    id: parseInt(inp.getAttribute('data-id')),
+                    orderNum: parseInt(inp.value) || 0
+                });
+            });
+            fetch('/api/dept/saveOrder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(list)
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    showMsg(result.message, result.success ? 'success' : 'error');
+                    if (result.success) {
+                        loadDeptTree();
+                    }
+                });
+        }
+
+        loadDeptTree();
+        loadDeptFlat();
+    </script>
+</body>
+</html>
