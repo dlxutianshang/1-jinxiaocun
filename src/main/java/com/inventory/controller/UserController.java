@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -45,9 +44,52 @@ public class UserController {
             result.put("message", "请先登录");
             return result;
         }
-        List<User> list = userService.findByPermission(userId, userRole);
+        java.util.List<User> list = userService.findByPermission(userId, userRole);
         result.put("success", true);
         result.put("data", list);
+        return result;
+    }
+
+    @PostMapping("/query")
+    public Map<String, Object> query(@RequestBody Map<String, Object> params) {
+        Map<String, Object> result = new HashMap<>();
+        Integer userId = params.get("userId") != null ? Integer.valueOf(params.get("userId").toString()) : null;
+        String userRole = (String) params.get("userRole");
+        if (userId == null || userRole == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
+        String username = (String) params.get("username");
+        String phone = (String) params.get("phone");
+        String status = (String) params.get("status");
+        String startTime = (String) params.get("startTime");
+        String endTime = (String) params.get("endTime");
+        Map<String, Object> pageData = userService.findByCondition(username, phone, status, startTime, endTime, userId, userRole);
+        result.put("success", true);
+        result.put("data", pageData);
+        return result;
+    }
+
+    @PostMapping("/changeStatus")
+    public Map<String, Object> changeStatus(@RequestBody Map<String, Object> params) {
+        Map<String, Object> result = new HashMap<>();
+        Integer userId = params.get("userId") != null ? Integer.valueOf(params.get("userId").toString()) : null;
+        String status = (String) params.get("status");
+        if (userId == null || status == null) {
+            result.put("success", false);
+            result.put("message", "参数错误");
+            return result;
+        }
+        return userService.changeStatus(userId, status);
+    }
+
+    @GetMapping("/{id}")
+    public Map<String, Object> getById(@PathVariable Integer id) {
+        Map<String, Object> result = new HashMap<>();
+        User user = userService.findDetailById(id);
+        result.put("success", user != null);
+        result.put("data", user);
         return result;
     }
 }

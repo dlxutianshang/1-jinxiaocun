@@ -627,3 +627,118 @@ a {
     margin: 0;
     padding: 8px 20px;
 }
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 22px;
+    vertical-align: middle;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #dcdfe6;
+    transition: 0.3s;
+    border-radius: 22px;
+}
+
+.switch-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.switch input:checked + .switch-slider {
+    background-color: #409eff;
+}
+
+.switch input:checked + .switch-slider:before {
+    transform: translateX(22px);
+}
+
+.switch input:disabled + .switch-slider {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.date-range {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.date-range .search-input {
+    width: 140px;
+}
+
+.date-separator {
+    color: #909399;
+    font-size: 14px;
+}
+
+.user-table {
+    margin-top: 0;
+}
+
+.user-table th,
+.user-table td {
+    vertical-align: middle;
+}
+
+.username-link {
+    color: #409eff;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.username-link:hover {
+    color: #66b1ff;
+    text-decoration: underline;
+}
+
+.detail-modal .modal-content {
+    width: 560px;
+}
+
+.detail-item {
+    display: flex;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    width: 100px;
+    color: #909399;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    flex: 1;
+    color: #303133;
+    font-size: 14px;
+    word-break: break-all;
+}

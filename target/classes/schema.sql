@@ -4,7 +4,12 @@ CREATE TABLE IF NOT EXISTS t_user (
     password VARCHAR(100) NOT NULL,
     email VARCHAR(100),
     dept_id INT DEFAULT 0,
-    role VARCHAR(20) NOT NULL DEFAULT 'USER'
+    role VARCHAR(20) NOT NULL DEFAULT 'USER',
+    nickname VARCHAR(50),
+    real_name VARCHAR(50),
+    phone VARCHAR(20),
+    status VARCHAR(10) DEFAULT '0',
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS t_role (
@@ -15,7 +20,7 @@ CREATE TABLE IF NOT EXISTS t_role (
 INSERT INTO t_role (name) VALUES ('ADMIN');
 INSERT INTO t_role (name) VALUES ('USER');
 
-INSERT INTO t_user (username, password, email, role) VALUES ('admin', '123456', 'admin@inventory.com', 'ADMIN');
+INSERT INTO t_user (username, password, email, role, nickname, real_name, phone, status) VALUES ('admin', '123456', 'admin@inventory.com', 'ADMIN', '超级管理员', '系统管理员', '13800138000', '0');
 
 CREATE TABLE IF NOT EXISTS t_dept (
     id INT AUTO_INCREMENT PRIMARY KEY,
