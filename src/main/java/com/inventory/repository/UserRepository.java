@@ -15,11 +15,30 @@ public class UserRepository {
     @Autowired
     private JdbcTemplate jdbc;
 
-    private final RowMapper<User> rowMapper = (rs, rowNum) -> {
+    private final RowMapper<User> rowMapperWithPassword = (rs, rowNum) -> {
         User u = new User();
         u.setId(rs.getInt("id"));
         u.setUsername(rs.getString("username"));
         u.setPassword(rs.getString("password"));
+        u.setEmail(rs.getString("email"));
+        u.setDeptId(rs.getInt("dept_id"));
+        u.setRole(rs.getString("role"));
+        u.setNickname(rs.getString("nickname"));
+        u.setRealName(rs.getString("real_name"));
+        u.setPhone(rs.getString("phone"));
+        u.setStatus(rs.getString("status"));
+        u.setCreateTime(rs.getString("create_time"));
+        try {
+            u.setDeptName(rs.getString("dept_name"));
+        } catch (Exception e) {
+        }
+        return u;
+    };
+
+    private final RowMapper<User> rowMapperWithoutPassword = (rs, rowNum) -> {
+        User u = new User();
+        u.setId(rs.getInt("id"));
+        u.setUsername(rs.getString("username"));
         u.setEmail(rs.getString("email"));
         u.setDeptId(rs.getInt("dept_id"));
         u.setRole(rs.getString("role"));
@@ -42,18 +61,18 @@ public class UserRepository {
     }
 
     public User findByUsername(String username) {
-        List<User> list = jdbc.query("SELECT id, username, password, email, dept_id, role, nickname, real_name, phone, status, create_time FROM t_user WHERE username = ?", rowMapper, username);
+        List<User> list = jdbc.query("SELECT id, username, password, email, dept_id, role, nickname, real_name, phone, status, create_time FROM t_user WHERE username = ?", rowMapperWithPassword, username);
         return list.isEmpty() ? null : list.get(0);
     }
 
     public List<User> findAll() {
         String sql = "SELECT u.id, u.username, u.email, u.dept_id, u.role, u.nickname, u.real_name, u.phone, u.status, u.create_time, d.name as dept_name FROM t_user u LEFT JOIN t_dept d ON u.dept_id = d.id ORDER BY u.id DESC";
-        return jdbc.query(sql, rowMapper);
+        return jdbc.query(sql, rowMapperWithoutPassword);
     }
 
     public User findById(Integer id) {
         String sql = "SELECT u.id, u.username, u.email, u.dept_id, u.role, u.nickname, u.real_name, u.phone, u.status, u.create_time, d.name as dept_name FROM t_user u LEFT JOIN t_dept d ON u.dept_id = d.id WHERE u.id = ?";
-        List<User> list = jdbc.query(sql, rowMapper, id);
+        List<User> list = jdbc.query(sql, rowMapperWithoutPassword, id);
         return list.isEmpty() ? null : list.get(0);
     }
 
@@ -87,7 +106,7 @@ public class UserRepository {
         }
         sql.append(" ORDER BY u.id DESC");
 
-        return jdbc.query(sql.toString(), rowMapper, params.toArray());
+        return jdbc.query(sql.toString(), rowMapperWithoutPassword, params.toArray());
     }
 
     public int updateStatus(Integer userId, String status) {

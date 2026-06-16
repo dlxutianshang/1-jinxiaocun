@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS t_role (
 INSERT INTO t_role (name) VALUES ('ADMIN');
 INSERT INTO t_role (name) VALUES ('USER');
 
-INSERT INTO t_user (username, password, email, role, nickname, real_name, phone, status) VALUES ('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'admin@inventory.com', 'ADMIN', '超级管理员', '系统管理员', '13800138000', '0');
+INSERT INTO t_user (username, password, email, role, nickname, real_name, phone, status) VALUES ('admin', '$2a$10$DozlqC8vM/s8N8t30Ji4UuHCI/GLTb9KuF.PKbJfw/cF5/e9uxk9q', 'admin@inventory.com', 'ADMIN', '超级管理员', '系统管理员', '13800138000', '0');
 
 CREATE TABLE IF NOT EXISTS t_dept (
     id INT AUTO_INCREMENT PRIMARY KEY,

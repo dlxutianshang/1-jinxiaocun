@@ -109,6 +109,10 @@
         }
 
         function logout() {
+            fetch('/api/user/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
             localStorage.removeItem('currentUser');
             window.location.href = 'index.html';
         }
@@ -138,10 +142,7 @@
             var startTime = document.getElementById('searchStartDate').value;
             var endTime = document.getElementById('searchEndDate').value;
 
-            var params = {
-                userId: currentUser.id,
-                userRole: currentUser.role
-            };
+            var params = {};
             if (username) params.username = username;
             if (phone) params.phone = phone;
             if (status) params.status = status;
@@ -183,8 +184,8 @@
                 var isEnabled = user.status === '0';
                 var statusHtml = '<label class="switch">' +
                     '<input type="checkbox" ' + (isEnabled ? 'checked' : '') +
-                    ' data-user-id="' + user.id + '" data-original-status="' + (isEnabled ? '0' : '1') + '"' +
-                    ' onchange="changeUserStatus(this)">' +
+                    ' data-user-id="' + user.id + '"' +
+                    ' onclick="return changeUserStatus(this, event)">' +
                     '<span class="switch-slider"></span>' +
                     '</label>';
 
@@ -216,14 +217,14 @@
             loadUsers();
         }
 
-        function changeUserStatus(checkbox) {
+        function changeUserStatus(checkbox, event) {
+            event.preventDefault();
             var userId = parseInt(checkbox.getAttribute('data-user-id'));
-            var originalStatus = checkbox.getAttribute('data-original-status');
-            var newStatus = checkbox.checked ? '0' : '1';
-            var action = newStatus === '0' ? '启用' : '禁用';
+            var targetChecked = checkbox.checked;
+            var newStatus = targetChecked ? '0' : '1';
+            var action = targetChecked ? '启用' : '禁用';
             if (!confirm('确定要' + action + '该用户吗？')) {
-                checkbox.checked = originalStatus === '0';
-                return;
+                return false;
             }
             fetch('/api/user/changeStatus', {
                 method: 'POST',
@@ -233,16 +234,14 @@
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
                     showMsg(result.message, result.success ? 'success' : 'error');
-                    if (!result.success) {
-                        checkbox.checked = originalStatus === '0';
-                    } else {
-                        checkbox.setAttribute('data-original-status', newStatus);
+                    if (result.success) {
+                        checkbox.checked = targetChecked;
                     }
                 })
                 .catch(function() {
                     showMsg('操作失败', 'error');
-                    checkbox.checked = originalStatus === '0';
                 });
+            return false;
         }
 
         function viewUserDetail(userId) {
