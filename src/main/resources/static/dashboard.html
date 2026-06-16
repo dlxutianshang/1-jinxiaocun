@@ -59,7 +59,9 @@
             document.getElementById('userDisplay').innerHTML =
                 '欢迎，<strong>' + currentUser.username + '</strong> <span class="role-tag ' + roleClass + '">' + roleText + '</span> &nbsp; ';
 
-            fetch('/api/user/list')
+            fetch('/api/user/list', {
+                credentials: 'include'
+            })
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
                     var msg = document.getElementById('listMsg');
@@ -80,7 +82,7 @@
         }
 
         function logout() {
-            fetch('/api/user/logout', { method: 'POST' });
+            fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
             localStorage.removeItem('currentUser');
             window.location.href = 'index.html';
         }

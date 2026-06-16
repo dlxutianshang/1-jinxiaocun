@@ -150,7 +150,7 @@
         var editingId = null;
 
         function logout() {
-            fetch('/api/user/logout', { method: 'POST' });
+            fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
             localStorage.removeItem('currentUser');
             window.location.href = 'index.html';
         }
@@ -188,6 +188,7 @@
             fetch('/api/system/dept/tree', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(params)
             })
                 .then(function(res) { return res.json(); })
@@ -338,7 +339,9 @@
         }
 
         function openEditModal(id) {
-            fetch('/api/system/dept/' + id)
+            fetch('/api/system/dept/' + id, {
+                credentials: 'include'
+            })
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
                     if (!result.success || !result.data) {
@@ -389,6 +392,7 @@
             fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(data)
             })
                 .then(function(res) { return res.json(); })
@@ -406,6 +410,7 @@
             fetch('/api/system/dept/delete', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ deptId: id })
             })
                 .then(function(res) { return res.json(); })
@@ -423,6 +428,7 @@
             fetch('/api/system/dept/changeStatus', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ deptId: id, status: status })
             })
                 .then(function(res) { return res.json(); })
@@ -446,6 +452,7 @@
             fetch('/api/system/dept/saveSortBatch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(list)
             })
                 .then(function(res) { return res.json(); })

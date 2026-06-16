@@ -109,7 +109,7 @@
         }
 
         function logout() {
-            fetch('/api/user/logout', { method: 'POST' });
+            fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
             localStorage.removeItem('currentUser');
             window.location.href = 'index.html';
         }
@@ -149,6 +149,7 @@
             fetch('/api/user/query', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(params)
             })
                 .then(function(res) { return res.json(); })
@@ -230,6 +231,7 @@
             fetch('/api/user/changeStatus', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ userId: userId, status: newStatus })
             })
                 .then(function(res) { return res.json(); })
@@ -246,7 +248,9 @@
         }
 
         function viewUserDetail(userId) {
-            fetch('/api/user/' + userId)
+            fetch('/api/user/' + userId, {
+                credentials: 'include'
+            })
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
                     if (!result.success || !result.data) {

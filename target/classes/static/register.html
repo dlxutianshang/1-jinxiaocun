@@ -37,6 +37,7 @@
             fetch('/api/user/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(data)
             }).then(res => res.json()).then(result => {
                 var msg = document.getElementById('message');
