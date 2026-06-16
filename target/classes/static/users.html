@@ -39,8 +39,7 @@
                         <div class="search-item">
                             <label>状态：</label>
                             <select id="searchStatus" class="search-select">
-                                <option value="">用户状态</option>
-                                <option value="all">全部</option>
+                                <option value="all" selected>用户状态</option>
                                 <option value="0">启用</option>
                                 <option value="1">禁用</option>
                             </select>
@@ -48,9 +47,9 @@
                         <div class="search-item">
                             <label>创建时间：</label>
                             <div class="date-range">
-                                <input type="date" id="searchStartDate" class="search-input">
+                                <input type="date" id="searchStartDate" class="search-input" placeholder="开始日期" onfocus="this.placeholder=''" onblur="this.placeholder='开始日期'">
                                 <span class="date-separator">至</span>
-                                <input type="date" id="searchEndDate" class="search-input">
+                                <input type="date" id="searchEndDate" class="search-input" placeholder="结束日期" onfocus="this.placeholder=''" onblur="this.placeholder='结束日期'">
                             </div>
                         </div>
                         <div class="search-actions">
@@ -184,7 +183,8 @@
                 var isEnabled = user.status === '0';
                 var statusHtml = '<label class="switch">' +
                     '<input type="checkbox" ' + (isEnabled ? 'checked' : '') +
-                    ' onchange="changeUserStatus(' + user.id + ', this.checked ? \'0\' : \'1\')">' +
+                    ' data-user-id="' + user.id + '" data-original-status="' + (isEnabled ? '0' : '1') + '"' +
+                    ' onchange="changeUserStatus(this)">' +
                     '<span class="switch-slider"></span>' +
                     '</label>';
 
@@ -194,7 +194,7 @@
                     '<td>' + user.id + '</td>' +
                     '<td><a class="username-link" onclick="viewUserDetail(' + user.id + ')">' +
                     (user.username || '') + '</a></td>' +
-                    '<td>' + (user.realName || user.nickname || '') + '</td>' +
+                    '<td>' + (user.nickname || user.realName || '') + '</td>' +
                     '<td>' + deptName + '</td>' +
                     '<td>' + (user.phone || '') + '</td>' +
                     '<td>' + statusHtml + '</td>' +
@@ -210,31 +210,38 @@
         function resetSearch() {
             document.getElementById('searchUsername').value = '';
             document.getElementById('searchPhone').value = '';
-            document.getElementById('searchStatus').value = '';
+            document.getElementById('searchStatus').value = 'all';
             document.getElementById('searchStartDate').value = '';
             document.getElementById('searchEndDate').value = '';
             loadUsers();
         }
 
-        function changeUserStatus(userId, status) {
-            var action = status === '0' ? '启用' : '禁用';
+        function changeUserStatus(checkbox) {
+            var userId = parseInt(checkbox.getAttribute('data-user-id'));
+            var originalStatus = checkbox.getAttribute('data-original-status');
+            var newStatus = checkbox.checked ? '0' : '1';
+            var action = newStatus === '0' ? '启用' : '禁用';
             if (!confirm('确定要' + action + '该用户吗？')) {
-                loadUsers();
+                checkbox.checked = originalStatus === '0';
                 return;
             }
             fetch('/api/user/changeStatus', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: userId, status: status })
+                body: JSON.stringify({ userId: userId, status: newStatus })
             })
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
                     showMsg(result.message, result.success ? 'success' : 'error');
-                    if (result.success) {
-                        loadUsers();
+                    if (!result.success) {
+                        checkbox.checked = originalStatus === '0';
                     } else {
-                        loadUsers();
+                        checkbox.setAttribute('data-original-status', newStatus);
                     }
+                })
+                .catch(function() {
+                    showMsg('操作失败', 'error');
+                    checkbox.checked = originalStatus === '0';
                 });
         }
 

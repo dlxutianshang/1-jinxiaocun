@@ -1,5 +1,6 @@
 com\inventory\model\Dept.class
 com\inventory\model\User.class
+com\inventory\config\SecurityConfig.class
 com\inventory\controller\DeptController.class
 com\inventory\service\DeptService.class
 com\inventory\service\UserService.class

@@ -42,17 +42,17 @@ public class UserRepository {
     }
 
     public User findByUsername(String username) {
-        List<User> list = jdbc.query("SELECT * FROM t_user WHERE username = ?", rowMapper, username);
+        List<User> list = jdbc.query("SELECT id, username, password, email, dept_id, role, nickname, real_name, phone, status, create_time FROM t_user WHERE username = ?", rowMapper, username);
         return list.isEmpty() ? null : list.get(0);
     }
 
     public List<User> findAll() {
-        String sql = "SELECT u.*, d.name as dept_name FROM t_user u LEFT JOIN t_dept d ON u.dept_id = d.id ORDER BY u.id DESC";
+        String sql = "SELECT u.id, u.username, u.email, u.dept_id, u.role, u.nickname, u.real_name, u.phone, u.status, u.create_time, d.name as dept_name FROM t_user u LEFT JOIN t_dept d ON u.dept_id = d.id ORDER BY u.id DESC";
         return jdbc.query(sql, rowMapper);
     }
 
     public User findById(Integer id) {
-        String sql = "SELECT u.*, d.name as dept_name FROM t_user u LEFT JOIN t_dept d ON u.dept_id = d.id WHERE u.id = ?";
+        String sql = "SELECT u.id, u.username, u.email, u.dept_id, u.role, u.nickname, u.real_name, u.phone, u.status, u.create_time, d.name as dept_name FROM t_user u LEFT JOIN t_dept d ON u.dept_id = d.id WHERE u.id = ?";
         List<User> list = jdbc.query(sql, rowMapper, id);
         return list.isEmpty() ? null : list.get(0);
     }
@@ -62,7 +62,7 @@ public class UserRepository {
     }
 
     public List<User> findByCondition(String username, String phone, String status, String startTime, String endTime) {
-        StringBuilder sql = new StringBuilder("SELECT u.*, d.name as dept_name FROM t_user u LEFT JOIN t_dept d ON u.dept_id = d.id WHERE 1=1");
+        StringBuilder sql = new StringBuilder("SELECT u.id, u.username, u.email, u.dept_id, u.role, u.nickname, u.real_name, u.phone, u.status, u.create_time, d.name as dept_name FROM t_user u LEFT JOIN t_dept d ON u.dept_id = d.id WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
         if (username != null && !username.trim().isEmpty()) {
