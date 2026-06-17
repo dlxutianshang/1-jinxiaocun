@@ -149,7 +149,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-default" onclick="closeFormModal()">取消</button>
-                <button class="btn btn-primary" onclick="submitForm()">确定</button>
+                <button id="formSubmitBtn" class="btn btn-primary" onclick="submitForm()">确定</button>
             </div>
         </div>
     </div>
@@ -448,9 +448,11 @@
         }
 
         function resetSubmitBtn() {
-            var submitBtn = document.querySelector('#formModal .btn-primary');
-            submitBtn.disabled = false;
-            submitBtn.textContent = '确定';
+            var submitBtn = document.getElementById('formSubmitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '确定';
+            }
         }
 
         function openAddModal() {
@@ -537,6 +539,9 @@
                     } else {
                         fillDeptSelect('formDeptId', deptIdVal);
                     }
+                })
+                .catch(function() {
+                    showMsg('获取用户信息失败', 'error');
                 });
         }
 
@@ -609,6 +614,7 @@
         }
 
         function submitForm() {
+            try {
             var username = document.getElementById('formUsername').value.trim();
             var nickname = document.getElementById('formNickname').value.trim();
             var deptId = document.getElementById('formDeptId').value;
@@ -656,9 +662,11 @@
                 }
             }
 
-            var submitBtn = document.querySelector('#formModal .btn-primary');
-            submitBtn.disabled = true;
-            submitBtn.textContent = '提交中...';
+            var submitBtn = document.getElementById('formSubmitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = '提交中...';
+            }
 
             var data = {
                 username: username,
@@ -706,6 +714,9 @@
                     resetSubmitBtn();
                     showFormMsg('提交失败，请重试', 'error');
                 });
+            } catch (e) {
+                showFormMsg('操作异常：' + e.message, 'error');
+            }
         }
 
         function deleteSingleUser(userId) {
@@ -725,6 +736,9 @@
                         if (result.success) {
                             loadUsers();
                         }
+                    })
+                    .catch(function() {
+                        showMsg('删除失败，请重试', 'error');
                     });
             };
             document.getElementById('confirmModal').style.display = 'block';
@@ -749,6 +763,9 @@
                         if (result.success) {
                             loadUsers();
                         }
+                    })
+                    .catch(function() {
+                        showMsg('删除失败，请重试', 'error');
                     });
             };
             document.getElementById('confirmModal').style.display = 'block';
@@ -795,6 +812,9 @@
 
                     document.getElementById('detailBody').innerHTML = html;
                     document.getElementById('detailModal').style.display = 'block';
+                })
+                .catch(function() {
+                    showMsg('获取用户详情失败', 'error');
                 });
         }
 
