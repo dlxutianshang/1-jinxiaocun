@@ -55,9 +55,57 @@ public class UserRepository {
     };
 
     public int save(User user) {
-        return jdbc.update("INSERT INTO t_user (username, password, email, role, nickname, real_name, phone, status) VALUES (?, ?, ?, 'USER', ?, ?, ?, '0')",
+        return jdbc.update("INSERT INTO t_user (username, password, email, dept_id, role, nickname, real_name, phone, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 user.getUsername(), user.getPassword(), user.getEmail(),
-                user.getNickname(), user.getRealName(), user.getPhone());
+                user.getDeptId() == null ? 0 : user.getDeptId(),
+                user.getRole() == null ? "USER" : user.getRole(),
+                user.getNickname(), user.getRealName(), user.getPhone(),
+                user.getStatus() == null ? "0" : user.getStatus());
+    }
+
+    public int update(User user) {
+        return jdbc.update("UPDATE t_user SET email = ?, dept_id = ?, role = ?, nickname = ?, real_name = ?, phone = ?, status = ? WHERE id = ?",
+                user.getEmail(),
+                user.getDeptId() == null ? 0 : user.getDeptId(),
+                user.getRole(),
+                user.getNickname(),
+                user.getRealName(),
+                user.getPhone(),
+                user.getStatus(),
+                user.getId());
+    }
+
+    public int updatePassword(Integer userId, String encodedPassword) {
+        return jdbc.update("UPDATE t_user SET password = ? WHERE id = ?", encodedPassword, userId);
+    }
+
+    public int delete(Integer id) {
+        return jdbc.update("DELETE FROM t_user WHERE id = ?", id);
+    }
+
+    public int deleteBatch(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return 0;
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < ids.size(); i++) {
+            if (i > 0) placeholders.append(",");
+            placeholders.append("?");
+        }
+        return jdbc.update("DELETE FROM t_user WHERE id IN (" + placeholders + ")", ids.toArray());
+    }
+
+    public User findByUsernameExcludeId(String username, Integer excludeId) {
+        List<User> list = jdbc.query("SELECT id, username, password, email, dept_id, role, nickname, real_name, phone, status, create_time FROM t_user WHERE username = ? AND id != ?", rowMapperWithPassword, username, excludeId);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    public boolean existsById(Integer id) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM t_user WHERE id = ?", Integer.class, id);
+        return count != null && count > 0;
+    }
+
+    public boolean isSuperAdmin(Integer id) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM t_user WHERE id = ? AND role = 'ADMIN'", Integer.class, id);
+        return count != null && count > 0;
     }
 
     public User findByUsername(String username) {

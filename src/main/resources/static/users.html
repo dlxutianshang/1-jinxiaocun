@@ -58,23 +58,114 @@
                         </div>
                     </div>
 
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="openAddModal()">+ 新增</button>
+                        <button class="btn btn-warning" id="btnEdit" onclick="openEditModal()" disabled>✏️ 修改</button>
+                        <button class="btn btn-danger" id="btnDelete" onclick="handleBatchDelete()" disabled>🗑️ 删除</button>
+                    </div>
+
                     <p id="listMsg" class="message"></p>
 
                     <table class="table user-table">
                         <thead>
                             <tr>
-                            <th>用户编号</th>
-                            <th>用户名称</th>
-                            <th>用户昵称</th>
-                            <th>部门</th>
-                            <th>手机号码</th>
-                            <th>状态</th>
-                            <th>创建时间</th>
-                        </tr>
+                                <th width="40"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
+                                <th>用户编号</th>
+                                <th>用户名称</th>
+                                <th>用户昵称</th>
+                                <th>部门</th>
+                                <th>手机号码</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
                         </thead>
                         <tbody id="userTableBody"></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="formModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <span id="formModalTitle">新增用户</span>
+                <span class="close" onclick="closeFormModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>用户名称：<span class="required">*</span></label>
+                        <input type="text" id="formUsername" class="form-input" placeholder="请输入用户名称" maxlength="50">
+                        <span id="usernameTip" class="form-tip"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>用户昵称：<span class="required">*</span></label>
+                        <input type="text" id="formNickname" class="form-input" placeholder="请输入用户昵称" maxlength="50">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>所属部门：</label>
+                        <select id="formDeptId" class="form-input">
+                            <option value="">请选择部门</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>手机号码：</label>
+                        <input type="text" id="formPhone" class="form-input" placeholder="请输入手机号码" maxlength="20">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>邮箱：</label>
+                        <input type="email" id="formEmail" class="form-input" placeholder="请输入邮箱" maxlength="100">
+                    </div>
+                    <div class="form-group" id="passwordGroup">
+                        <label>密码：<span class="required">*</span></label>
+                        <input type="password" id="formPassword" class="form-input" placeholder="8-20位，含大小写字母和数字" maxlength="20">
+                        <span id="passwordTip" class="form-tip"></span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>状态：</label>
+                        <select id="formStatus" class="form-input">
+                            <option value="0">启用</option>
+                            <option value="1">禁用</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>分配角色：<span class="required">*</span></label>
+                        <select id="formRole" class="form-input">
+                            <option value="">请选择角色</option>
+                            <option value="ADMIN">超级管理员</option>
+                            <option value="USER">普通用户</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeFormModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitForm()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="width:400px;">
+            <div class="modal-header">
+                <span>确认提示</span>
+                <span class="close" onclick="closeConfirmModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="text-align:center; padding:30px 20px;">
+                <div style="font-size:40px; color:#e6a23c; margin-bottom:15px;">⚠️</div>
+                <div id="confirmText" style="font-size:15px; color:#606266; line-height:1.6;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeConfirmModal()">取消</button>
+                <button class="btn btn-danger" id="confirmOkBtn" onclick="executeConfirm()">确定删除</button>
             </div>
         </div>
     </div>
@@ -108,6 +199,14 @@
                 '欢迎，<strong>' + currentUser.username + '</strong> <span class="role-tag ' + roleClass + '">' + roleText + '</span> &nbsp; ';
         }
 
+        var editMode = false;
+        var editingId = null;
+        var selectedIds = [];
+        var confirmCallback = null;
+        var deptList = [];
+        var userListCache = [];
+        var usernameCheckTimer = null;
+
         function logout() {
             fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
             localStorage.removeItem('currentUser');
@@ -130,6 +229,30 @@
             if (!datetime) return '';
             datetime = datetime.replace('T', ' ').substring(0, 19);
             return datetime;
+        }
+
+        function loadDeptList() {
+            fetch('/api/system/dept/list', {
+                credentials: 'include'
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        deptList = result.data || [];
+                    }
+                });
+        }
+
+        function fillDeptSelect(selectId, selectedDeptId) {
+            var select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">请选择部门</option>';
+            deptList.forEach(function(dept) {
+                var opt = document.createElement('option');
+                opt.value = dept.deptId;
+                opt.textContent = dept.deptName;
+                if (selectedDeptId && selectedDeptId == dept.deptId) opt.selected = true;
+                select.appendChild(opt);
+            });
         }
 
         function loadUsers() {
@@ -164,6 +287,10 @@
                     }
                     var data = result.data || {};
                     var list = data.list || [];
+                    userListCache = list;
+                    selectedIds = [];
+                    updateToolbarState();
+                    document.getElementById('checkAll').checked = false;
                     renderUserList(list);
                 })
                 .catch(function() {
@@ -176,13 +303,14 @@
             tbody.innerHTML = '';
             if (list.length === 0) {
                 var tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="7" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
+                tr.innerHTML = '<td colspan="9" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
                 tbody.appendChild(tr);
                 return;
             }
 
             list.forEach(function(user) {
                 var tr = document.createElement('tr');
+                var isChecked = selectedIds.indexOf(user.id) >= 0;
                 var isEnabled = user.status === '0';
                 var statusHtml = '<label class="switch">' +
                     '<input type="checkbox" ' + (isEnabled ? 'checked' : '') +
@@ -193,7 +321,13 @@
 
                 var deptName = user.deptName || '未分配';
 
+                var actionHtml = '';
+                actionHtml += '<a class="link-btn link-edit" onclick="viewUserDetail(' + user.id + ')">👁️ 详情</a>';
+                actionHtml += '<a class="link-btn link-edit" onclick="openEditModalForUser(' + user.id + ')">✏️ 修改</a>';
+                actionHtml += '<a class="link-btn link-delete" onclick="deleteSingleUser(' + user.id + ')">🗑️ 删除</a>';
+
                 tr.innerHTML =
+                    '<td><input type="checkbox" class="user-checkbox" value="' + user.id + '" ' + (isChecked ? 'checked' : '') + ' onchange="handleCheckboxChange()"></td>' +
                     '<td>' + user.id + '</td>' +
                     '<td><a class="username-link" onclick="viewUserDetail(' + user.id + ')">' +
                     (user.username || '') + '</a></td>' +
@@ -201,9 +335,42 @@
                     '<td>' + deptName + '</td>' +
                     '<td>' + (user.phone || '') + '</td>' +
                     '<td>' + statusHtml + '</td>' +
-                    '<td>' + formatDateTime(user.createTime) + '</td>';
+                    '<td>' + formatDateTime(user.createTime) + '</td>' +
+                    '<td>' + actionHtml + '</td>';
                 tbody.appendChild(tr);
             });
+        }
+
+        function handleCheckboxChange() {
+            selectedIds = [];
+            var checkboxes = document.querySelectorAll('.user-checkbox');
+            checkboxes.forEach(function(cb) {
+                if (cb.checked) {
+                    selectedIds.push(parseInt(cb.value));
+                }
+            });
+            var checkAll = document.getElementById('checkAll');
+            checkAll.checked = checkboxes.length > 0 && selectedIds.length === checkboxes.length;
+            updateToolbarState();
+        }
+
+        function toggleCheckAll(checkbox) {
+            var checkboxes = document.querySelectorAll('.user-checkbox');
+            selectedIds = [];
+            checkboxes.forEach(function(cb) {
+                cb.checked = checkbox.checked;
+                if (checkbox.checked) {
+                    selectedIds.push(parseInt(cb.value));
+                }
+            });
+            updateToolbarState();
+        }
+
+        function updateToolbarState() {
+            var btnEdit = document.getElementById('btnEdit');
+            var btnDelete = document.getElementById('btnDelete');
+            btnEdit.disabled = selectedIds.length !== 1;
+            btnDelete.disabled = selectedIds.length === 0;
         }
 
         function searchUsers() {
@@ -247,6 +414,276 @@
                 });
         }
 
+        function openAddModal() {
+            editMode = false;
+            editingId = null;
+            document.getElementById('formModalTitle').textContent = '新增用户';
+            document.getElementById('formUsername').value = '';
+            document.getElementById('formUsername').removeAttribute('disabled');
+            document.getElementById('formNickname').value = '';
+            document.getElementById('formPhone').value = '';
+            document.getElementById('formEmail').value = '';
+            document.getElementById('formPassword').value = '';
+            document.getElementById('formPassword').removeAttribute('disabled');
+            document.getElementById('passwordGroup').style.display = '';
+            document.getElementById('formStatus').value = '0';
+            document.getElementById('formRole').value = '';
+            document.getElementById('usernameTip').textContent = '';
+            document.getElementById('passwordTip').textContent = '';
+            fillDeptSelect('formDeptId', null);
+            document.getElementById('formModal').style.display = 'block';
+            bindUsernameCheck();
+        }
+
+        function openEditModal() {
+            if (selectedIds.length !== 1) {
+                showMsg('请选择一条数据进行修改', 'error');
+                return;
+            }
+            openEditModalForUser(selectedIds[0]);
+        }
+
+        function openEditModalForUser(userId) {
+            fetch('/api/user/' + userId, {
+                credentials: 'include'
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (!result.success || !result.data) {
+                        showMsg('获取用户信息失败', 'error');
+                        return;
+                    }
+                    var user = result.data;
+                    editMode = true;
+                    editingId = user.id;
+                    document.getElementById('formModalTitle').textContent = '修改用户';
+                    document.getElementById('formUsername').value = user.username || '';
+                    document.getElementById('formUsername').setAttribute('disabled', 'disabled');
+                    document.getElementById('formNickname').value = user.nickname || '';
+                    document.getElementById('formPhone').value = user.phone || '';
+                    document.getElementById('formEmail').value = user.email || '';
+                    document.getElementById('formPassword').value = '';
+                    document.getElementById('formPassword').removeAttribute('disabled');
+                    document.getElementById('passwordGroup').style.display = '';
+                    document.getElementById('formStatus').value = user.status || '0';
+                    document.getElementById('formRole').value = user.role || '';
+                    document.getElementById('usernameTip').textContent = '';
+                    document.getElementById('passwordTip').textContent = '留空则不修改密码';
+                    document.getElementById('passwordTip').style.color = '#909399';
+                    fillDeptSelect('formDeptId', user.deptId);
+                    document.getElementById('formModal').style.display = 'block';
+                    bindUsernameCheck();
+                });
+        }
+
+        function closeFormModal() {
+            document.getElementById('formModal').style.display = 'none';
+            unbindUsernameCheck();
+        }
+
+        function bindUsernameCheck() {
+            unbindUsernameCheck();
+            var input = document.getElementById('formUsername');
+            usernameCheckHandler = function() {
+                var val = input.value.trim();
+                if (!val) {
+                    document.getElementById('usernameTip').textContent = '';
+                    return;
+                }
+                clearTimeout(usernameCheckTimer);
+                usernameCheckTimer = setTimeout(function() {
+                    var url = '/api/user/checkUsername?username=' + encodeURIComponent(val);
+                    if (editMode && editingId) {
+                        url += '&excludeId=' + editingId;
+                    }
+                    fetch(url, { credentials: 'include' })
+                        .then(function(res) { return res.json(); })
+                        .then(function(result) {
+                            if (result.success && result.exists) {
+                                document.getElementById('usernameTip').textContent = '用户名称已存在';
+                                document.getElementById('usernameTip').style.color = '#f56c6c';
+                            } else {
+                                document.getElementById('usernameTip').textContent = '用户名称可用';
+                                document.getElementById('usernameTip').style.color = '#67c23a';
+                            }
+                        });
+                }, 500);
+            };
+            input.addEventListener('input', usernameCheckHandler);
+        }
+
+        var usernameCheckHandler = null;
+
+        function unbindUsernameCheck() {
+            var input = document.getElementById('formUsername');
+            if (usernameCheckHandler) {
+                input.removeEventListener('input', usernameCheckHandler);
+                usernameCheckHandler = null;
+            }
+            clearTimeout(usernameCheckTimer);
+        }
+
+        function validatePassword(password) {
+            if (!password) return { valid: false, msg: '密码不能为空' };
+            if (password.length < 8 || password.length > 20) return { valid: false, msg: '密码长度需8-20位' };
+            if (!/[a-z]/.test(password)) return { valid: false, msg: '密码需包含小写字母' };
+            if (!/[A-Z]/.test(password)) return { valid: false, msg: '密码需包含大写字母' };
+            if (!/\d/.test(password)) return { valid: false, msg: '密码需包含数字' };
+            return { valid: true, msg: '' };
+        }
+
+        function validatePhone(phone) {
+            if (!phone) return true;
+            return /^1[3-9]\d{9}$/.test(phone);
+        }
+
+        function validateEmail(email) {
+            if (!email) return true;
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function submitForm() {
+            var username = document.getElementById('formUsername').value.trim();
+            var nickname = document.getElementById('formNickname').value.trim();
+            var deptId = document.getElementById('formDeptId').value;
+            var phone = document.getElementById('formPhone').value.trim();
+            var email = document.getElementById('formEmail').value.trim();
+            var password = document.getElementById('formPassword').value;
+            var status = document.getElementById('formStatus').value;
+            var role = document.getElementById('formRole').value;
+
+            if (!username) {
+                showMsg('请输入用户名称', 'error');
+                return;
+            }
+            if (!nickname) {
+                showMsg('请输入用户昵称', 'error');
+                return;
+            }
+            if (!role) {
+                showMsg('请选择角色', 'error');
+                return;
+            }
+            if (phone && !validatePhone(phone)) {
+                showMsg('手机号码格式不正确', 'error');
+                return;
+            }
+            if (email && !validateEmail(email)) {
+                showMsg('邮箱格式不正确', 'error');
+                return;
+            }
+
+            if (editMode) {
+                if (password && !validatePassword(password).valid) {
+                    document.getElementById('passwordTip').textContent = validatePassword(password).msg;
+                    document.getElementById('passwordTip').style.color = '#f56c6c';
+                    return;
+                }
+            } else {
+                var pwdResult = validatePassword(password);
+                if (!pwdResult.valid) {
+                    document.getElementById('passwordTip').textContent = pwdResult.msg;
+                    document.getElementById('passwordTip').style.color = '#f56c6c';
+                    return;
+                }
+            }
+
+            var data = {
+                username: username,
+                nickname: nickname,
+                deptId: deptId ? parseInt(deptId) : 0,
+                phone: phone,
+                email: email,
+                status: status,
+                role: role
+            };
+
+            if (password) {
+                data.password = password;
+            }
+
+            var url;
+            if (editMode) {
+                data.id = editingId;
+                url = '/api/user/update';
+            } else {
+                url = '/api/user/create';
+            }
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(data)
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    showMsg(result.message, result.success ? 'success' : 'error');
+                    if (result.success) {
+                        closeFormModal();
+                        loadUsers();
+                    }
+                });
+        }
+
+        function deleteSingleUser(userId) {
+            var user = userListCache.find(function(u) { return u.id === userId; });
+            var displayName = user ? (user.nickname || user.username) : '';
+            document.getElementById('confirmText').textContent = '确定要删除用户【' + displayName + '】吗？\n超级管理员和已关联业务数据的用户不可删除。';
+            confirmCallback = function() {
+                fetch('/api/user/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ userId: userId })
+                })
+                    .then(function(res) { return res.json(); })
+                    .then(function(result) {
+                        showMsg(result.message, result.success ? 'success' : 'error');
+                        if (result.success) {
+                            loadUsers();
+                        }
+                    });
+            };
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        function handleBatchDelete() {
+            if (selectedIds.length === 0) {
+                showMsg('请选择要删除的用户', 'error');
+                return;
+            }
+            document.getElementById('confirmText').textContent = '确定要删除选中的 ' + selectedIds.length + ' 个用户吗？\n超级管理员和已关联业务数据的用户不可删除。';
+            confirmCallback = function() {
+                fetch('/api/user/deleteBatch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ ids: selectedIds })
+                })
+                    .then(function(res) { return res.json(); })
+                    .then(function(result) {
+                        showMsg(result.message, result.success ? 'success' : 'error');
+                        if (result.success) {
+                            loadUsers();
+                        }
+                    });
+            };
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+            confirmCallback = null;
+        }
+
+        function executeConfirm() {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            closeConfirmModal();
+        }
+
         function viewUserDetail(userId) {
             fetch('/api/user/' + userId, {
                 credentials: 'include'
@@ -284,12 +721,15 @@
         }
 
         window.onclick = function(event) {
-            var modal = document.getElementById('detailModal');
-            if (event.target == modal) {
-                closeDetailModal();
-            }
+            var formModal = document.getElementById('formModal');
+            var confirmModal = document.getElementById('confirmModal');
+            var detailModal = document.getElementById('detailModal');
+            if (event.target == formModal) closeFormModal();
+            if (event.target == confirmModal) closeConfirmModal();
+            if (event.target == detailModal) closeDetailModal();
         };
 
+        loadDeptList();
         loadUsers();
     </script>
 </body>

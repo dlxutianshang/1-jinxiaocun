@@ -737,3 +737,36 @@ a {
     font-size: 14px;
     word-break: break-all;
 }
+
+.form-tip {
+    display: block;
+    font-size: 12px;
+    margin-top: 4px;
+    min-height: 16px;
+    line-height: 16px;
+}
+
+.btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.user-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #1890ff;
+}
+
+#checkAll {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #1890ff;
+}
+
+.user-table .link-btn {
+    font-size: 12px;
+    white-space: nowrap;
+}

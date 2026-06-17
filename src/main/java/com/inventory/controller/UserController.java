@@ -2,11 +2,13 @@ package com.inventory.controller;
 
 import com.inventory.model.User;
 import com.inventory.service.UserService;
+import com.inventory.service.DeptService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -16,6 +18,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private DeptService deptService;
 
     private User getCurrentUser(HttpSession session) {
         return (User) session.getAttribute("currentUser");
@@ -128,5 +133,98 @@ public class UserController {
         result.put("success", user != null);
         result.put("data", user);
         return result;
+    }
+
+    @PostMapping("/create")
+    public Map<String, Object> create(@RequestBody User user, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        User currentUser = getCurrentUser(session);
+        if (currentUser == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            result.put("success", false);
+            result.put("message", "无权限操作");
+            return result;
+        }
+        return userService.createUser(user);
+    }
+
+    @PostMapping("/update")
+    public Map<String, Object> update(@RequestBody User user, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        User currentUser = getCurrentUser(session);
+        if (currentUser == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            result.put("success", false);
+            result.put("message", "无权限操作");
+            return result;
+        }
+        return userService.updateUser(user, currentUser.getId());
+    }
+
+    @PostMapping("/delete")
+    public Map<String, Object> delete(@RequestBody Map<String, Object> params, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        User currentUser = getCurrentUser(session);
+        if (currentUser == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            result.put("success", false);
+            result.put("message", "无权限操作");
+            return result;
+        }
+        Integer userId = params.get("userId") != null ? Integer.valueOf(params.get("userId").toString()) : null;
+        if (userId == null) {
+            result.put("success", false);
+            result.put("message", "参数错误");
+            return result;
+        }
+        return userService.deleteUser(userId, currentUser.getId());
+    }
+
+    @PostMapping("/deleteBatch")
+    public Map<String, Object> deleteBatch(@RequestBody Map<String, Object> params, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        User currentUser = getCurrentUser(session);
+        if (currentUser == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            result.put("success", false);
+            result.put("message", "无权限操作");
+            return result;
+        }
+        @SuppressWarnings("unchecked")
+        List<Integer> ids = (List<Integer>) params.get("ids");
+        if (ids == null || ids.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "请选择要删除的用户");
+            return result;
+        }
+        return userService.deleteUsersBatch(ids, currentUser.getId());
+    }
+
+    @GetMapping("/checkUsername")
+    public Map<String, Object> checkUsername(@RequestParam String username, @RequestParam(required = false) Integer excludeId, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        User currentUser = getCurrentUser(session);
+        if (currentUser == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
+        return userService.checkUsername(username, excludeId);
     }
 }
