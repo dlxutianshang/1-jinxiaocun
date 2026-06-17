@@ -157,6 +157,9 @@ public class UserService {
             user.setDeptId(existing.getDeptId());
         }
         userRepository.update(user);
+        if (user.getPassword() != null && !user.getPassword().trim().isEmpty()) {
+            userRepository.updatePassword(user.getId(), user.getPassword());
+        }
         result.put("success", true);
         result.put("message", "修改成功");
         return result;

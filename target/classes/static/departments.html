@@ -136,6 +136,8 @@
 
         if (!currentUser || !currentUser.id) {
             window.location.href = 'index.html';
+        } else if (currentUser.role && currentUser.role.toUpperCase() !== 'ADMIN') {
+            window.location.href = 'dashboard.html';
         } else {
             var roleText = currentUser.role === 'ADMIN' ? '超级管理员' : '普通用户';
             var roleClass = currentUser.role === 'ADMIN' ? 'role-admin' : 'role-user';

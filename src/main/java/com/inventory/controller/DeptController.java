@@ -26,9 +26,15 @@ public class DeptController {
     @PostMapping("/tree")
     public Map<String, Object> tree(@RequestBody(required = false) Map<String, Object> params, HttpSession session) {
         Map<String, Object> result = new HashMap<>();
-        if (requireLogin(session) == null) {
+        User currentUser = requireLogin(session);
+        if (currentUser == null) {
             result.put("success", false);
             result.put("message", "请先登录");
+            return result;
+        }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            result.put("success", false);
+            result.put("message", "无权限操作");
             return result;
         }
         String deptName = null;
@@ -50,9 +56,15 @@ public class DeptController {
     @PostMapping("/query")
     public Map<String, Object> query(@RequestBody Map<String, Object> params, HttpSession session) {
         Map<String, Object> result = new HashMap<>();
-        if (requireLogin(session) == null) {
+        User currentUser = requireLogin(session);
+        if (currentUser == null) {
             result.put("success", false);
             result.put("message", "请先登录");
+            return result;
+        }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            result.put("success", false);
+            result.put("message", "无权限操作");
             return result;
         }
         String deptName = (String) params.get("deptName");
@@ -68,9 +80,15 @@ public class DeptController {
     @GetMapping("/list")
     public Map<String, Object> list(HttpSession session) {
         Map<String, Object> result = new HashMap<>();
-        if (requireLogin(session) == null) {
+        User currentUser = requireLogin(session);
+        if (currentUser == null) {
             result.put("success", false);
             result.put("message", "请先登录");
+            return result;
+        }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            result.put("success", false);
+            result.put("message", "无权限操作");
             return result;
         }
         List<Dept> list = deptService.findAllFlat();
@@ -82,9 +100,15 @@ public class DeptController {
     @GetMapping("/{id}")
     public Map<String, Object> getById(@PathVariable Integer id, HttpSession session) {
         Map<String, Object> result = new HashMap<>();
-        if (requireLogin(session) == null) {
+        User currentUser = requireLogin(session);
+        if (currentUser == null) {
             result.put("success", false);
             result.put("message", "请先登录");
+            return result;
+        }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            result.put("success", false);
+            result.put("message", "无权限操作");
             return result;
         }
         Dept dept = deptService.findById(id);

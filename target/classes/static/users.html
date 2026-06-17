@@ -193,6 +193,8 @@
 
         if (!currentUser || !currentUser.id) {
             window.location.href = 'index.html';
+        } else if (currentUser.role && currentUser.role.toUpperCase() !== 'ADMIN') {
+            window.location.href = 'dashboard.html';
         } else {
             var roleText = currentUser.role === 'ADMIN' ? '超级管理员' : '普通用户';
             var roleClass = currentUser.role === 'ADMIN' ? 'role-admin' : 'role-user';
@@ -445,6 +447,12 @@
                 });
         }
 
+        function resetSubmitBtn() {
+            var submitBtn = document.querySelector('#formModal .btn-primary');
+            submitBtn.disabled = false;
+            submitBtn.textContent = '确定';
+        }
+
         function openAddModal() {
             editMode = false;
             editingId = null;
@@ -463,10 +471,8 @@
             document.getElementById('passwordTip').textContent = '';
             document.getElementById('formMsg').textContent = '';
             document.getElementById('formMsg').className = 'form-message';
-
-            var submitBtn = document.querySelector('#formModal .btn-primary');
-            submitBtn.disabled = false;
-            submitBtn.textContent = '确定';
+            showMsg('', '');
+            resetSubmitBtn();
 
             document.getElementById('formModal').style.display = 'block';
             bindUsernameCheck();
@@ -517,10 +523,8 @@
                     document.getElementById('passwordTip').style.color = '#909399';
                     document.getElementById('formMsg').textContent = '';
                     document.getElementById('formMsg').className = 'form-message';
-
-                    var submitBtn = document.querySelector('#formModal .btn-primary');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '确定';
+                    showMsg('', '');
+                    resetSubmitBtn();
 
                     document.getElementById('formModal').style.display = 'block';
                     bindUsernameCheck();
@@ -539,6 +543,8 @@
         function closeFormModal() {
             document.getElementById('formModal').style.display = 'none';
             unbindUsernameCheck();
+            resetSubmitBtn();
+            showFormMsg('', '');
         }
 
         function bindUsernameCheck() {
@@ -651,7 +657,6 @@
             }
 
             var submitBtn = document.querySelector('#formModal .btn-primary');
-            var originalText = submitBtn.textContent;
             submitBtn.disabled = true;
             submitBtn.textContent = '提交中...';
 
@@ -685,8 +690,7 @@
             })
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
+                    resetSubmitBtn();
                     if (result.success) {
                         showFormMsg(result.message, 'success');
                         setTimeout(function() {
@@ -699,8 +703,7 @@
                     }
                 })
                 .catch(function() {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
+                    resetSubmitBtn();
                     showFormMsg('提交失败，请重试', 'error');
                 });
         }
