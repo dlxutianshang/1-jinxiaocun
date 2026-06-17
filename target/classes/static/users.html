@@ -94,6 +94,7 @@
                 <span class="close" onclick="closeFormModal()">&times;</span>
             </div>
             <div class="modal-body">
+                <p id="formMsg" class="form-message"></p>
                 <div class="form-row">
                     <div class="form-group">
                         <label>用户名称：<span class="required">*</span></label>
@@ -225,13 +226,25 @@
             }
         }
 
+        function showFormMsg(text, type) {
+            var msg = document.getElementById('formMsg');
+            msg.textContent = text;
+            msg.className = 'form-message ' + (type || 'success');
+            if (text) {
+                setTimeout(function() {
+                    msg.textContent = '';
+                    msg.className = 'form-message';
+                }, 3000);
+            }
+        }
+
         function formatDateTime(datetime) {
             if (!datetime) return '';
             datetime = datetime.replace('T', ' ').substring(0, 19);
             return datetime;
         }
 
-        function loadDeptList() {
+        function loadDeptList(callback) {
             fetch('/api/system/dept/list', {
                 credentials: 'include'
             })
@@ -239,6 +252,19 @@
                 .then(function(result) {
                     if (result.success) {
                         deptList = result.data || [];
+                    } else {
+                        deptList = [];
+                        console.warn('部门列表加载失败:', result.message);
+                    }
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                })
+                .catch(function(err) {
+                    deptList = [];
+                    console.error('部门列表加载异常:', err);
+                    if (typeof callback === 'function') {
+                        callback();
                     }
                 });
         }
@@ -246,12 +272,17 @@
         function fillDeptSelect(selectId, selectedDeptId) {
             var select = document.getElementById(selectId);
             select.innerHTML = '<option value="">请选择部门</option>';
+            if (!deptList || deptList.length === 0) {
+                return;
+            }
             deptList.forEach(function(dept) {
-                var opt = document.createElement('option');
-                opt.value = dept.deptId;
-                opt.textContent = dept.deptName;
-                if (selectedDeptId && selectedDeptId == dept.deptId) opt.selected = true;
-                select.appendChild(opt);
+                if (dept && dept.deptId != null && dept.deptName != null) {
+                    var opt = document.createElement('option');
+                    opt.value = dept.deptId;
+                    opt.textContent = dept.deptName;
+                    if (selectedDeptId && selectedDeptId == dept.deptId) opt.selected = true;
+                    select.appendChild(opt);
+                }
             });
         }
 
@@ -430,9 +461,23 @@
             document.getElementById('formRole').value = '';
             document.getElementById('usernameTip').textContent = '';
             document.getElementById('passwordTip').textContent = '';
-            fillDeptSelect('formDeptId', null);
+            document.getElementById('formMsg').textContent = '';
+            document.getElementById('formMsg').className = 'form-message';
+
+            var submitBtn = document.querySelector('#formModal .btn-primary');
+            submitBtn.disabled = false;
+            submitBtn.textContent = '确定';
+
             document.getElementById('formModal').style.display = 'block';
             bindUsernameCheck();
+
+            if (deptList.length === 0) {
+                loadDeptList(function() {
+                    fillDeptSelect('formDeptId', null);
+                });
+            } else {
+                fillDeptSelect('formDeptId', null);
+            }
         }
 
         function openEditModal() {
@@ -470,9 +515,24 @@
                     document.getElementById('usernameTip').textContent = '';
                     document.getElementById('passwordTip').textContent = '留空则不修改密码';
                     document.getElementById('passwordTip').style.color = '#909399';
-                    fillDeptSelect('formDeptId', user.deptId);
+                    document.getElementById('formMsg').textContent = '';
+                    document.getElementById('formMsg').className = 'form-message';
+
+                    var submitBtn = document.querySelector('#formModal .btn-primary');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '确定';
+
                     document.getElementById('formModal').style.display = 'block';
                     bindUsernameCheck();
+
+                    var deptIdVal = user.deptId || 0;
+                    if (deptList.length === 0) {
+                        loadDeptList(function() {
+                            fillDeptSelect('formDeptId', deptIdVal);
+                        });
+                    } else {
+                        fillDeptSelect('formDeptId', deptIdVal);
+                    }
                 });
         }
 
@@ -553,23 +613,23 @@
             var role = document.getElementById('formRole').value;
 
             if (!username) {
-                showMsg('请输入用户名称', 'error');
+                showFormMsg('请输入用户名称', 'error');
                 return;
             }
             if (!nickname) {
-                showMsg('请输入用户昵称', 'error');
+                showFormMsg('请输入用户昵称', 'error');
                 return;
             }
             if (!role) {
-                showMsg('请选择角色', 'error');
+                showFormMsg('请选择角色', 'error');
                 return;
             }
             if (phone && !validatePhone(phone)) {
-                showMsg('手机号码格式不正确', 'error');
+                showFormMsg('手机号码格式不正确', 'error');
                 return;
             }
             if (email && !validateEmail(email)) {
-                showMsg('邮箱格式不正确', 'error');
+                showFormMsg('邮箱格式不正确', 'error');
                 return;
             }
 
@@ -577,6 +637,7 @@
                 if (password && !validatePassword(password).valid) {
                     document.getElementById('passwordTip').textContent = validatePassword(password).msg;
                     document.getElementById('passwordTip').style.color = '#f56c6c';
+                    showFormMsg(validatePassword(password).msg, 'error');
                     return;
                 }
             } else {
@@ -584,9 +645,15 @@
                 if (!pwdResult.valid) {
                     document.getElementById('passwordTip').textContent = pwdResult.msg;
                     document.getElementById('passwordTip').style.color = '#f56c6c';
+                    showFormMsg(pwdResult.msg, 'error');
                     return;
                 }
             }
+
+            var submitBtn = document.querySelector('#formModal .btn-primary');
+            var originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '提交中...';
 
             var data = {
                 username: username,
@@ -618,11 +685,23 @@
             })
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
-                    showMsg(result.message, result.success ? 'success' : 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
                     if (result.success) {
-                        closeFormModal();
-                        loadUsers();
+                        showFormMsg(result.message, 'success');
+                        setTimeout(function() {
+                            closeFormModal();
+                            showMsg(result.message, 'success');
+                            loadUsers();
+                        }, 500);
+                    } else {
+                        showFormMsg(result.message, 'error');
                     }
+                })
+                .catch(function() {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    showFormMsg('提交失败，请重试', 'error');
                 });
         }
 
