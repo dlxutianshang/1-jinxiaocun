@@ -91,6 +91,12 @@ public class RoleController {
     @PostMapping("/changeStatus")
     public Map<String, Object> changeStatus(@RequestBody Map<String, Object> params, HttpSession session) {
         Map<String, Object> result = new HashMap<>();
+        User currentUser = requireLogin(session);
+        if (currentUser == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
         if (!isAdmin(session)) {
             result.put("success", false);
             result.put("message", "无权限操作");

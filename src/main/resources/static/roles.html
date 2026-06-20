@@ -28,43 +28,6 @@
             </div>
             <div class="page-content">
                 <div class="card">
-                    <div class="search-bar">
-                        <div class="search-item">
-                            <label>角色名称：</label>
-                            <input type="text" id="searchRoleName" placeholder="请输入角色名称" class="search-input">
-                        </div>
-                        <div class="search-item">
-                            <label>权限字符：</label>
-                            <input type="text" id="searchRoleKey" placeholder="请输入权限字符" class="search-input">
-                        </div>
-                        <div class="search-item">
-                            <label>状态：</label>
-                            <select id="searchStatus" class="search-select">
-                                <option value="all" selected>角色状态</option>
-                                <option value="0">启用</option>
-                                <option value="1">禁用</option>
-                            </select>
-                        </div>
-                        <div class="search-item">
-                            <label>创建时间：</label>
-                            <div class="date-range">
-                                <input type="date" id="searchStartDate" class="search-input" placeholder="开始日期" onfocus="this.placeholder=''" onblur="this.placeholder='开始日期'">
-                                <span class="date-separator">至</span>
-                                <input type="date" id="searchEndDate" class="search-input" placeholder="结束日期" onfocus="this.placeholder=''" onblur="this.placeholder='结束日期'">
-                            </div>
-                        </div>
-                        <div class="search-actions">
-                            <button class="btn btn-primary" onclick="searchRoles()">🔍 搜索</button>
-                            <button class="btn btn-default" onclick="resetSearch()">🔄 重置</button>
-                        </div>
-                    </div>
-
-                    <div class="toolbar">
-                        <button class="btn btn-primary" onclick="openAddModal()">+ 新增</button>
-                        <button class="btn btn-warning" id="btnEdit" onclick="openEditModal()" disabled>✏️ 修改</button>
-                        <button class="btn btn-danger" id="btnDelete" onclick="handleBatchDelete()" disabled>🗑️ 删除</button>
-                    </div>
-
                     <p id="listMsg" class="message"></p>
 
                     <table class="table role-table">
@@ -77,69 +40,11 @@
                                 <th>显示顺序</th>
                                 <th>状态</th>
                                 <th>创建时间</th>
-                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="roleTableBody"></tbody>
                     </table>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="formModal" class="modal">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <span id="formModalTitle">新增角色</span>
-                <span class="close" onclick="closeFormModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p id="formMsg" class="form-message"></p>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>角色名称：<span class="required">*</span></label>
-                        <input type="text" id="formName" class="form-input" placeholder="请输入角色名称" maxlength="50">
-                    </div>
-                    <div class="form-group">
-                        <label>权限字符：<span class="required">*</span></label>
-                        <input type="text" id="formRoleKey" class="form-input" placeholder="请输入权限字符" maxlength="50">
-                        <span id="roleKeyTip" class="form-tip"></span>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>显示顺序：</label>
-                        <input type="number" id="formSort" class="form-input" value="0" min="0">
-                    </div>
-                    <div class="form-group">
-                        <label>状态：</label>
-                        <select id="formStatus" class="form-input">
-                            <option value="0">启用</option>
-                            <option value="1">禁用</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeFormModal()">取消</button>
-                <button id="formSubmitBtn" class="btn btn-primary" onclick="submitForm()">确定</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="confirmModal" class="modal">
-        <div class="modal-content" style="width:400px;">
-            <div class="modal-header">
-                <span>确认提示</span>
-                <span class="close" onclick="closeConfirmModal()">&times;</span>
-            </div>
-            <div class="modal-body" style="text-align:center; padding:30px 20px;">
-                <div style="font-size:40px; color:#e6a23c; margin-bottom:15px;">⚠️</div>
-                <div id="confirmText" style="font-size:15px; color:#606266; line-height:1.6;"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeConfirmModal()">取消</button>
-                <button class="btn btn-danger" id="confirmOkBtn" onclick="executeConfirm()">确定删除</button>
             </div>
         </div>
     </div>
@@ -152,8 +57,6 @@
 
         if (!currentUser || !currentUser.id) {
             window.location.href = 'index.html';
-        } else if (currentUser.role && currentUser.role.toUpperCase() !== 'ADMIN') {
-            window.location.href = 'dashboard.html';
         } else {
             var roleText = currentUser.role === 'ADMIN' ? '超级管理员' : '普通用户';
             var roleClass = currentUser.role === 'ADMIN' ? 'role-admin' : 'role-user';
@@ -161,12 +64,8 @@
                 '欢迎，<strong>' + currentUser.username + '</strong> <span class="role-tag ' + roleClass + '">' + roleText + '</span> &nbsp; ';
         }
 
-        var editMode = false;
-        var editingId = null;
         var selectedIds = [];
-        var confirmCallback = null;
         var roleListCache = [];
-        var roleKeyCheckTimer = null;
 
         function logout() {
             fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
@@ -186,18 +85,6 @@
             }
         }
 
-        function showFormMsg(text, type) {
-            var msg = document.getElementById('formMsg');
-            msg.textContent = text;
-            msg.className = 'form-message ' + (type || 'success');
-            if (text) {
-                setTimeout(function() {
-                    msg.textContent = '';
-                    msg.className = 'form-message';
-                }, 3000);
-            }
-        }
-
         function formatDateTime(datetime) {
             if (!datetime) return '';
             datetime = datetime.replace('T', ' ').substring(0, 19);
@@ -205,24 +92,8 @@
         }
 
         function loadRoles() {
-            var roleName = document.getElementById('searchRoleName').value;
-            var roleKey = document.getElementById('searchRoleKey').value;
-            var status = document.getElementById('searchStatus').value;
-            var startTime = document.getElementById('searchStartDate').value;
-            var endTime = document.getElementById('searchEndDate').value;
-
-            var params = {};
-            if (roleName) params.roleName = roleName;
-            if (roleKey) params.roleKey = roleKey;
-            if (status) params.status = status;
-            if (startTime) params.startTime = startTime;
-            if (endTime) params.endTime = endTime;
-
-            fetch('/api/system/role/query', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(params)
+            fetch('/api/system/role/list', {
+                credentials: 'include'
             })
                 .then(function(res) { return res.json(); })
                 .then(function(result) {
@@ -234,11 +105,9 @@
                         showMsg(result.message, 'error');
                         return;
                     }
-                    var data = result.data || {};
-                    var list = data.list || [];
+                    var list = result.data || [];
                     roleListCache = list;
                     selectedIds = [];
-                    updateToolbarState();
                     document.getElementById('checkAll').checked = false;
                     renderRoleList(list);
                 })
@@ -252,7 +121,7 @@
             tbody.innerHTML = '';
             if (list.length === 0) {
                 var tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="8" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
+                tr.innerHTML = '<td colspan="7" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
                 tbody.appendChild(tr);
                 return;
             }
@@ -261,20 +130,12 @@
                 var tr = document.createElement('tr');
                 var isChecked = selectedIds.indexOf(role.id) >= 0;
                 var isEnabled = role.status === '0';
-                var isSuperAdmin = role.roleKey === 'ADMIN';
                 var statusHtml = '<label class="switch">' +
                     '<input type="checkbox" ' + (isEnabled ? 'checked' : '') +
-                    (isSuperAdmin ? ' disabled' : '') +
                     ' data-role-id="' + role.id + '"' +
                     ' onchange="changeRoleStatus(this)">' +
                     '<span class="switch-slider"></span>' +
                     '</label>';
-
-                var actionHtml = '';
-                actionHtml += '<a class="link-btn link-edit" onclick="openEditModalForRole(' + role.id + ')">✏️ 修改</a>';
-                if (!isSuperAdmin) {
-                    actionHtml += '<a class="link-btn link-delete" onclick="deleteSingleRole(' + role.id + ')">🗑️ 删除</a>';
-                }
 
                 tr.innerHTML =
                     '<td><input type="checkbox" class="role-checkbox" value="' + role.id + '" ' + (isChecked ? 'checked' : '') + ' onchange="handleCheckboxChange()"></td>' +
@@ -283,8 +144,7 @@
                     '<td><code style="background:#f5f5f5; padding:2px 6px; border-radius:3px; color:#c7254e;">' + (role.roleKey || '') + '</code></td>' +
                     '<td>' + (role.sort != null ? role.sort : 0) + '</td>' +
                     '<td>' + statusHtml + '</td>' +
-                    '<td>' + formatDateTime(role.createTime) + '</td>' +
-                    '<td>' + actionHtml + '</td>';
+                    '<td>' + formatDateTime(role.createTime) + '</td>';
                 tbody.appendChild(tr);
             });
         }
@@ -299,7 +159,6 @@
             });
             var checkAll = document.getElementById('checkAll');
             checkAll.checked = checkboxes.length > 0 && selectedIds.length === checkboxes.length;
-            updateToolbarState();
         }
 
         function toggleCheckAll(checkbox) {
@@ -311,27 +170,6 @@
                     selectedIds.push(parseInt(cb.value));
                 }
             });
-            updateToolbarState();
-        }
-
-        function updateToolbarState() {
-            var btnEdit = document.getElementById('btnEdit');
-            var btnDelete = document.getElementById('btnDelete');
-            btnEdit.disabled = selectedIds.length !== 1;
-            btnDelete.disabled = selectedIds.length === 0;
-        }
-
-        function searchRoles() {
-            loadRoles();
-        }
-
-        function resetSearch() {
-            document.getElementById('searchRoleName').value = '';
-            document.getElementById('searchRoleKey').value = '';
-            document.getElementById('searchStatus').value = 'all';
-            document.getElementById('searchStartDate').value = '';
-            document.getElementById('searchEndDate').value = '';
-            loadRoles();
         }
 
         function changeRoleStatus(checkbox) {
@@ -362,256 +200,7 @@
                 });
         }
 
-        function resetSubmitBtn() {
-            var submitBtn = document.getElementById('formSubmitBtn');
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '确定';
-            }
-        }
-
-        function openAddModal() {
-            editMode = false;
-            editingId = null;
-            document.getElementById('formModalTitle').textContent = '新增角色';
-            document.getElementById('formName').value = '';
-            document.getElementById('formRoleKey').value = '';
-            document.getElementById('formSort').value = '0';
-            document.getElementById('formStatus').value = '0';
-            document.getElementById('roleKeyTip').textContent = '';
-            document.getElementById('formMsg').textContent = '';
-            document.getElementById('formMsg').className = 'form-message';
-            showMsg('', '');
-            resetSubmitBtn();
-
-            document.getElementById('formModal').style.display = 'block';
-            bindRoleKeyCheck();
-        }
-
-        function openEditModal() {
-            if (selectedIds.length !== 1) {
-                showMsg('请选择一条数据进行修改', 'error');
-                return;
-            }
-            openEditModalForRole(selectedIds[0]);
-        }
-
-        function openEditModalForRole(roleId) {
-            fetch('/api/system/role/' + roleId, {
-                credentials: 'include'
-            })
-                .then(function(res) { return res.json(); })
-                .then(function(result) {
-                    if (!result.success || !result.data) {
-                        showMsg('获取角色信息失败', 'error');
-                        return;
-                    }
-                    var role = result.data;
-                    editMode = true;
-                    editingId = role.id;
-                    document.getElementById('formModalTitle').textContent = '修改角色';
-                    document.getElementById('formName').value = role.name || '';
-                    document.getElementById('formRoleKey').value = role.roleKey || '';
-                    document.getElementById('formSort').value = role.sort || 0;
-                    document.getElementById('formStatus').value = role.status || '0';
-                    document.getElementById('roleKeyTip').textContent = '';
-                    document.getElementById('formMsg').textContent = '';
-                    document.getElementById('formMsg').className = 'form-message';
-                    showMsg('', '');
-                    resetSubmitBtn();
-
-                    document.getElementById('formModal').style.display = 'block';
-                    bindRoleKeyCheck();
-                })
-                .catch(function() {
-                    showMsg('获取角色信息失败', 'error');
-                });
-        }
-
-        function closeFormModal() {
-            document.getElementById('formModal').style.display = 'none';
-            unbindRoleKeyCheck();
-            resetSubmitBtn();
-            showFormMsg('', '');
-        }
-
-        function bindRoleKeyCheck() {
-            unbindRoleKeyCheck();
-            var input = document.getElementById('formRoleKey');
-            roleKeyCheckHandler = function() {
-                var val = input.value.trim();
-                if (!val) {
-                    document.getElementById('roleKeyTip').textContent = '';
-                    return;
-                }
-                clearTimeout(roleKeyCheckTimer);
-                roleKeyCheckTimer = setTimeout(function() {
-                    var url = '/api/system/role/checkRoleKey?roleKey=' + encodeURIComponent(val);
-                    if (editMode && editingId) {
-                        url += '&excludeId=' + editingId;
-                    }
-                    fetch(url, { credentials: 'include' })
-                        .then(function(res) { return res.json(); })
-                        .then(function(result) {
-                            if (result.success && result.exists) {
-                                document.getElementById('roleKeyTip').textContent = '权限字符已存在';
-                                document.getElementById('roleKeyTip').style.color = '#f56c6c';
-                            } else {
-                                document.getElementById('roleKeyTip').textContent = '权限字符可用';
-                                document.getElementById('roleKeyTip').style.color = '#67c23a';
-                            }
-                        });
-                }, 500);
-            };
-            input.addEventListener('input', roleKeyCheckHandler);
-        }
-
-        var roleKeyCheckHandler = null;
-
-        function unbindRoleKeyCheck() {
-            var input = document.getElementById('formRoleKey');
-            if (roleKeyCheckHandler) {
-                input.removeEventListener('input', roleKeyCheckHandler);
-                roleKeyCheckHandler = null;
-            }
-            clearTimeout(roleKeyCheckTimer);
-        }
-
-        function submitForm() {
-            try {
-                var name = document.getElementById('formName').value.trim();
-                var roleKey = document.getElementById('formRoleKey').value.trim();
-                var sort = document.getElementById('formSort').value;
-                var status = document.getElementById('formStatus').value;
-
-                if (!name) {
-                    showFormMsg('请输入角色名称', 'error');
-                    return;
-                }
-                if (!roleKey) {
-                    showFormMsg('请输入权限字符', 'error');
-                    return;
-                }
-
-                var submitBtn = document.getElementById('formSubmitBtn');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = '提交中...';
-                }
-
-                var data = {
-                    name: name,
-                    roleKey: roleKey,
-                    sort: sort ? parseInt(sort) : 0,
-                    status: status
-                };
-
-                var url;
-                if (editMode) {
-                    data.id = editingId;
-                    url = '/api/system/role/update';
-                } else {
-                    url = '/api/system/role/create';
-                }
-
-                fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify(data)
-                })
-                    .then(function(res) { return res.json(); })
-                    .then(function(result) {
-                        resetSubmitBtn();
-                        if (result.success) {
-                            showFormMsg(result.message, 'success');
-                            setTimeout(function() {
-                                closeFormModal();
-                                showMsg(result.message, 'success');
-                                loadRoles();
-                            }, 500);
-                        } else {
-                            showFormMsg(result.message, 'error');
-                        }
-                    })
-                    .catch(function() {
-                        resetSubmitBtn();
-                        showFormMsg('提交失败，请重试', 'error');
-                    });
-            } catch (e) {
-                showFormMsg('操作异常：' + e.message, 'error');
-            }
-        }
-
-        function deleteSingleRole(roleId) {
-            var role = roleListCache.find(function(r) { return r.id === roleId; });
-            var displayName = role ? role.name : '';
-            document.getElementById('confirmText').textContent = '确定要删除角色【' + displayName + '】吗？\n超级管理员和已关联用户的角色不可删除。';
-            confirmCallback = function() {
-                fetch('/api/system/role/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ roleId: roleId })
-                })
-                    .then(function(res) { return res.json(); })
-                    .then(function(result) {
-                        showMsg(result.message, result.success ? 'success' : 'error');
-                        if (result.success) {
-                            loadRoles();
-                        }
-                    })
-                    .catch(function() {
-                        showMsg('删除失败，请重试', 'error');
-                    });
-            };
-            document.getElementById('confirmModal').style.display = 'block';
-        }
-
-        function handleBatchDelete() {
-            if (selectedIds.length === 0) {
-                showMsg('请选择要删除的角色', 'error');
-                return;
-            }
-            document.getElementById('confirmText').textContent = '确定要删除选中的 ' + selectedIds.length + ' 个角色吗？\n超级管理员和已关联用户的角色不可删除。';
-            confirmCallback = function() {
-                fetch('/api/system/role/deleteBatch', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ ids: selectedIds })
-                })
-                    .then(function(res) { return res.json(); })
-                    .then(function(result) {
-                        showMsg(result.message, result.success ? 'success' : 'error');
-                        if (result.success) {
-                            loadRoles();
-                        }
-                    })
-                    .catch(function() {
-                        showMsg('删除失败，请重试', 'error');
-                    });
-            };
-            document.getElementById('confirmModal').style.display = 'block';
-        }
-
-        function closeConfirmModal() {
-            document.getElementById('confirmModal').style.display = 'none';
-            confirmCallback = null;
-        }
-
-        function executeConfirm() {
-            if (confirmCallback) {
-                confirmCallback();
-            }
-            closeConfirmModal();
-        }
-
         window.onclick = function(event) {
-            var formModal = document.getElementById('formModal');
-            var confirmModal = document.getElementById('confirmModal');
-            if (event.target == formModal) closeFormModal();
-            if (event.target == confirmModal) closeConfirmModal();
         };
 
         loadRoles();

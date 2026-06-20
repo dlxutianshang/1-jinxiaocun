@@ -32,11 +32,6 @@ public class DeptController {
             result.put("message", "请先登录");
             return result;
         }
-        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
-            result.put("success", false);
-            result.put("message", "无权限操作");
-            return result;
-        }
         String deptName = null;
         String status = null;
         Integer companyId = null;
@@ -62,11 +57,6 @@ public class DeptController {
             result.put("message", "请先登录");
             return result;
         }
-        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
-            result.put("success", false);
-            result.put("message", "无权限操作");
-            return result;
-        }
         String deptName = (String) params.get("deptName");
         String status = (String) params.get("status");
         int pageNo = params.get("pageNo") != null ? Integer.parseInt(params.get("pageNo").toString()) : 1;
@@ -86,11 +76,6 @@ public class DeptController {
             result.put("message", "请先登录");
             return result;
         }
-        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
-            result.put("success", false);
-            result.put("message", "无权限操作");
-            return result;
-        }
         List<Dept> list = deptService.findAllFlat();
         result.put("success", true);
         result.put("data", list);
@@ -104,11 +89,6 @@ public class DeptController {
         if (currentUser == null) {
             result.put("success", false);
             result.put("message", "请先登录");
-            return result;
-        }
-        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
-            result.put("success", false);
-            result.put("message", "无权限操作");
             return result;
         }
         Dept dept = deptService.findById(id);
