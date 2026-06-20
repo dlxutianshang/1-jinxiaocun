@@ -28,6 +28,10 @@
             </div>
             <div class="page-content">
                 <div class="card">
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="openAddModal()">+ 新增</button>
+                    </div>
+
                     <p id="listMsg" class="message"></p>
 
                     <table class="table role-table">
@@ -44,6 +48,50 @@
                         <tbody id="roleTableBody"></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="roleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modalTitle">新增角色</span>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>角色名称：<span class="required">*</span></label>
+                        <input type="text" id="formName" class="form-input" placeholder="请输入角色名称">
+                    </div>
+                    <div class="form-group">
+                        <label>权限字符：<span class="required">*</span></label>
+                        <input type="text" id="formRoleKey" class="form-input" placeholder="请输入权限字符">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>显示顺序：</label>
+                        <input type="number" id="formSort" class="form-input" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>状态：</label>
+                        <select id="formStatus" class="form-input">
+                            <option value="0">正常</option>
+                            <option value="1">停用</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="width:100%;">
+                        <label>备注：</label>
+                        <textarea id="formRemark" class="form-input" rows="3" placeholder="请输入备注" style="width:100%;resize:vertical;"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitForm()">确定</button>
             </div>
         </div>
     </div>
@@ -136,6 +184,60 @@
                 tbody.appendChild(tr);
             });
         }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = '新增角色';
+            document.getElementById('formName').value = '';
+            document.getElementById('formRoleKey').value = '';
+            document.getElementById('formSort').value = '0';
+            document.getElementById('formStatus').value = '0';
+            document.getElementById('formRemark').value = '';
+            document.getElementById('roleModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('roleModal').style.display = 'none';
+        }
+
+        function submitForm() {
+            var name = document.getElementById('formName').value.trim();
+            var roleKey = document.getElementById('formRoleKey').value.trim();
+            if (!name) {
+                showMsg('请输入角色名称', 'error');
+                return;
+            }
+            if (!roleKey) {
+                showMsg('请输入权限字符', 'error');
+                return;
+            }
+            var data = {
+                name: name,
+                roleKey: roleKey,
+                sort: parseInt(document.getElementById('formSort').value) || 0,
+                status: document.getElementById('formStatus').value
+            };
+            fetch('/api/system/role/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(data)
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    showMsg(result.message, result.success ? 'success' : 'error');
+                    if (result.success) {
+                        closeModal();
+                        loadRoles();
+                    }
+                });
+        }
+
+        window.onclick = function(event) {
+            var modal = document.getElementById('roleModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        };
 
         loadRoles();
     </script>

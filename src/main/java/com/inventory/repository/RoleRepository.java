@@ -69,6 +69,11 @@ public class RoleRepository {
         return list.isEmpty() ? null : list.get(0);
     }
 
+    public Role findByName(String name) {
+        List<Role> list = jdbc.query("SELECT * FROM t_role WHERE name = ?", rowMapper, name);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
     public Role findByRoleKey(String roleKey) {
         List<Role> list = jdbc.query("SELECT * FROM t_role WHERE role_key = ?", rowMapper, roleKey);
         return list.isEmpty() ? null : list.get(0);

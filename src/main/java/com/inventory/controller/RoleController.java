@@ -37,4 +37,16 @@ public class RoleController {
         result.put("data", list);
         return result;
     }
+
+    @PostMapping("/create")
+    public Map<String, Object> create(@RequestBody Role role, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        User currentUser = requireLogin(session);
+        if (currentUser == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
+        return roleService.create(role);
+    }
 }
