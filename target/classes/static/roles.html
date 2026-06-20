@@ -214,7 +214,8 @@
                 name: name,
                 roleKey: roleKey,
                 sort: parseInt(document.getElementById('formSort').value) || 0,
-                status: document.getElementById('formStatus').value
+                status: document.getElementById('formStatus').value,
+                remark: document.getElementById('formRemark').value.trim()
             };
             fetch('/api/system/role/create', {
                 method: 'POST',

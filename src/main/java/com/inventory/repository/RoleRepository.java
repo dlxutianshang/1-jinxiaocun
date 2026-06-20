@@ -26,6 +26,7 @@ public class RoleRepository {
         r.setRoleKey(rs.getString("role_key"));
         r.setSort(rs.getInt("sort"));
         r.setStatus(rs.getString("status"));
+        r.setRemark(rs.getString("remark"));
         Timestamp ts = rs.getTimestamp("create_time");
         r.setCreateTime(ts != null ? sdf.format(ts) : "");
         return r;
@@ -85,19 +86,21 @@ public class RoleRepository {
     }
 
     public int save(Role role) {
-        return jdbc.update("INSERT INTO t_role (name, role_key, sort, status) VALUES (?, ?, ?, ?)",
-                role.getName(),
-                role.getRoleKey(),
-                role.getSort() == null ? 0 : role.getSort(),
-                role.getStatus() == null ? "0" : role.getStatus());
-    }
-
-    public int update(Role role) {
-        return jdbc.update("UPDATE t_role SET name = ?, role_key = ?, sort = ?, status = ? WHERE id = ?",
+        return jdbc.update("INSERT INTO t_role (name, role_key, sort, status, remark) VALUES (?, ?, ?, ?, ?)",
                 role.getName(),
                 role.getRoleKey(),
                 role.getSort() == null ? 0 : role.getSort(),
                 role.getStatus() == null ? "0" : role.getStatus(),
+                role.getRemark());
+    }
+
+    public int update(Role role) {
+        return jdbc.update("UPDATE t_role SET name = ?, role_key = ?, sort = ?, status = ?, remark = ? WHERE id = ?",
+                role.getName(),
+                role.getRoleKey(),
+                role.getSort() == null ? 0 : role.getSort(),
+                role.getStatus() == null ? "0" : role.getStatus(),
+                role.getRemark(),
                 role.getId());
     }
 

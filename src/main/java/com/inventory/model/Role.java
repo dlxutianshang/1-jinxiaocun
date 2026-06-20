@@ -9,6 +9,7 @@ public class Role implements Serializable {
     private String roleKey;
     private Integer sort;
     private String status;
+    private String remark;
     private String createTime;
 
     public Integer getId() { return id; }
@@ -21,6 +22,8 @@ public class Role implements Serializable {
     public void setSort(Integer sort) { this.sort = sort; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
     public String getCreateTime() { return createTime; }
     public void setCreateTime(String createTime) { this.createTime = createTime; }
 }
