@@ -130,12 +130,9 @@
                 var tr = document.createElement('tr');
                 var isChecked = selectedIds.indexOf(role.id) >= 0;
                 var isEnabled = role.status === '0';
-                var statusHtml = '<label class="switch">' +
-                    '<input type="checkbox" ' + (isEnabled ? 'checked' : '') +
-                    ' data-role-id="' + role.id + '"' +
-                    ' onchange="changeRoleStatus(this)">' +
-                    '<span class="switch-slider"></span>' +
-                    '</label>';
+                var statusClass = isEnabled ? 'status-normal' : 'status-disabled';
+                var statusText = isEnabled ? '正常' : '停用';
+                var statusHtml = '<span class="status-tag ' + statusClass + '">' + statusText + '</span>';
 
                 tr.innerHTML =
                     '<td><input type="checkbox" class="role-checkbox" value="' + role.id + '" ' + (isChecked ? 'checked' : '') + ' onchange="handleCheckboxChange()"></td>' +
@@ -170,34 +167,6 @@
                     selectedIds.push(parseInt(cb.value));
                 }
             });
-        }
-
-        function changeRoleStatus(checkbox) {
-            var roleId = parseInt(checkbox.getAttribute('data-role-id'));
-            var isCurrentlyEnabled = checkbox.checked;
-            var newStatus = isCurrentlyEnabled ? '0' : '1';
-            var action = isCurrentlyEnabled ? '启用' : '禁用';
-            if (!confirm('确定要' + action + '该角色吗？')) {
-                checkbox.checked = !isCurrentlyEnabled;
-                return;
-            }
-            fetch('/api/system/role/changeStatus', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ roleId: roleId, status: newStatus })
-            })
-                .then(function(res) { return res.json(); })
-                .then(function(result) {
-                    showMsg(result.message, result.success ? 'success' : 'error');
-                    if (!result.success) {
-                        checkbox.checked = !isCurrentlyEnabled;
-                    }
-                })
-                .catch(function() {
-                    showMsg('操作失败', 'error');
-                    checkbox.checked = !isCurrentlyEnabled;
-                });
         }
 
         window.onclick = function(event) {
