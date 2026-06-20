@@ -14,11 +14,15 @@ CREATE TABLE IF NOT EXISTS t_user (
 
 CREATE TABLE IF NOT EXISTS t_role (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE
+    name VARCHAR(50) NOT NULL,
+    role_key VARCHAR(50) NOT NULL UNIQUE,
+    sort INT DEFAULT 0,
+    status VARCHAR(10) DEFAULT '0',
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO t_role (name) VALUES ('ADMIN');
-INSERT INTO t_role (name) VALUES ('USER');
+INSERT INTO t_role (name, role_key, sort, status) VALUES ('超级管理员', 'ADMIN', 1, '0');
+INSERT INTO t_role (name, role_key, sort, status) VALUES ('普通用户', 'USER', 2, '0');
 
 INSERT INTO t_user (username, password, email, role, nickname, real_name, phone, status) VALUES ('admin', '$2a$10$DozlqC8vM/s8N8t30Ji4UuHCI/GLTb9KuF.PKbJfw/cF5/e9uxk9q', 'admin@inventory.com', 'ADMIN', '超级管理员', '系统管理员', '13800138000', '0');
 
