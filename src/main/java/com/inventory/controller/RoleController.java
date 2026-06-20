@@ -55,4 +55,37 @@ public class RoleController {
         newRole.setRemark(role.getRemark());
         return roleService.create(newRole);
     }
+
+    @GetMapping("/{id}")
+    public Map<String, Object> getById(@PathVariable Integer id, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        User currentUser = requireLogin(session);
+        if (currentUser == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
+        Role role = roleService.findById(id);
+        if (role == null) {
+            result.put("success", false);
+            result.put("message", "角色不存在");
+            return result;
+        }
+        result.put("success", true);
+        result.put("data", role);
+        return result;
+    }
+
+    @PostMapping("/update")
+    public Map<String, Object> update(@RequestBody Role role, HttpSession session) {
+        Map<String, Object> result = new HashMap<>();
+        User currentUser = requireLogin(session);
+        if (currentUser == null) {
+            result.put("success", false);
+            result.put("message", "请先登录");
+            return result;
+        }
+        boolean isSuperAdmin = "ADMIN".equals(currentUser.getRole());
+        return roleService.update(role, isSuperAdmin);
+    }
 }

@@ -30,6 +30,7 @@
                 <div class="card">
                     <div class="toolbar">
                         <button class="btn btn-primary" onclick="openAddModal()">+ 新增</button>
+                        <button class="btn btn-warning" id="editBtn" onclick="openEditModal()" disabled>✏️ 修改</button>
                     </div>
 
                     <p id="listMsg" class="message"></p>
@@ -37,6 +38,7 @@
                     <table class="table role-table">
                         <thead>
                             <tr>
+                                <th style="width:40px;"><input type="checkbox" id="checkAll" onclick="toggleCheckAll()"></th>
                                 <th>角色编号</th>
                                 <th>角色名称</th>
                                 <th>权限字符</th>
@@ -103,6 +105,11 @@
             currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
         } catch (e) {}
 
+        var editMode = false;
+        var editingId = null;
+        var selectedIds = [];
+        var roleList = [];
+
         if (!currentUser || !currentUser.id) {
             window.location.href = 'index.html';
         } else {
@@ -150,8 +157,10 @@
                         showMsg(result.message, 'error');
                         return;
                     }
-                    var list = result.data || [];
-                    renderRoleList(list);
+                    roleList = result.data || [];
+                    selectedIds = [];
+                    renderRoleList(roleList);
+                    updateEditBtn();
                 })
                 .catch(function() {
                     showMsg('加载失败', 'error');
@@ -163,7 +172,7 @@
             tbody.innerHTML = '';
             if (list.length === 0) {
                 var tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="6" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
+                tr.innerHTML = '<td colspan="8" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
                 tbody.appendChild(tr);
                 return;
             }
@@ -174,8 +183,10 @@
                 var statusClass = isEnabled ? 'status-normal' : 'status-disabled';
                 var statusText = isEnabled ? '正常' : '停用';
                 var statusHtml = '<span class="status-tag ' + statusClass + '">' + statusText + '</span>';
+                var isChecked = selectedIds.indexOf(role.id) > -1;
 
                 tr.innerHTML =
+                    '<td><input type="checkbox" class="row-check" data-id="' + role.id + '" ' + (isChecked ? 'checked' : '') + ' onclick="toggleCheck(' + role.id + ')"></td>' +
                     '<td>' + role.id + '</td>' +
                     '<td>' + (role.name || '') + '</td>' +
                     '<td><code style="background:#f5f5f5; padding:2px 6px; border-radius:3px; color:#c7254e;">' + (role.roleKey || '') + '</code></td>' +
@@ -187,14 +198,81 @@
             });
         }
 
+        function toggleCheckAll() {
+            var checkAll = document.getElementById('checkAll');
+            if (checkAll.checked) {
+                selectedIds = roleList.map(function(r) { return r.id; });
+            } else {
+                selectedIds = [];
+            }
+            renderRoleList(roleList);
+            updateEditBtn();
+        }
+
+        function toggleCheck(id) {
+            var idx = selectedIds.indexOf(id);
+            if (idx > -1) {
+                selectedIds.splice(idx, 1);
+            } else {
+                selectedIds.push(id);
+            }
+            var checkAll = document.getElementById('checkAll');
+            checkAll.checked = selectedIds.length === roleList.length && roleList.length > 0;
+            updateEditBtn();
+        }
+
+        function updateEditBtn() {
+            var btn = document.getElementById('editBtn');
+            btn.disabled = selectedIds.length !== 1;
+        }
+
+        function setFormDisabled(disabled) {
+            document.getElementById('formName').disabled = disabled;
+            document.getElementById('formRoleKey').disabled = disabled;
+        }
+
         function openAddModal() {
+            editMode = false;
+            editingId = null;
             document.getElementById('modalTitle').textContent = '新增角色';
             document.getElementById('formName').value = '';
             document.getElementById('formRoleKey').value = '';
             document.getElementById('formSort').value = '0';
             document.getElementById('formStatus').value = '0';
             document.getElementById('formRemark').value = '';
+            setFormDisabled(false);
             document.getElementById('roleModal').style.display = 'block';
+        }
+
+        function openEditModal() {
+            if (selectedIds.length !== 1) {
+                showMsg('请选择单条数据进行修改', 'error');
+                return;
+            }
+            var id = selectedIds[0];
+            fetch('/api/system/role/' + id, {
+                credentials: 'include'
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (!result.success || !result.data) {
+                        showMsg(result.message || '获取角色信息失败', 'error');
+                        return;
+                    }
+                    var role = result.data;
+                    editMode = true;
+                    editingId = id;
+                    document.getElementById('modalTitle').textContent = '修改角色';
+                    document.getElementById('formName').value = role.name || '';
+                    document.getElementById('formRoleKey').value = role.roleKey || '';
+                    document.getElementById('formSort').value = role.sort != null ? role.sort : '0';
+                    document.getElementById('formStatus').value = role.status || '0';
+                    document.getElementById('formRemark').value = role.remark || '';
+                    var isSuperAdminRole = role.roleKey === 'ADMIN';
+                    var isCurrentUserSuperAdmin = currentUser && currentUser.role === 'ADMIN';
+                    setFormDisabled(isSuperAdminRole && !isCurrentUserSuperAdmin);
+                    document.getElementById('roleModal').style.display = 'block';
+                });
         }
 
         function closeModal() {
@@ -219,7 +297,14 @@
                 status: document.getElementById('formStatus').value,
                 remark: document.getElementById('formRemark').value.trim()
             };
-            fetch('/api/system/role/create', {
+            var url;
+            if (editMode) {
+                data.id = editingId;
+                url = '/api/system/role/update';
+            } else {
+                url = '/api/system/role/create';
+            }
+            fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
