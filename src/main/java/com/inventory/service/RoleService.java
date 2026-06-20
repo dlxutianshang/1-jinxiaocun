@@ -43,9 +43,6 @@ public class RoleService {
         }
         role.setName(role.getName().trim());
         role.setRoleKey(role.getRoleKey().trim());
-        if (role.getRemark() != null) {
-            role.setRemark(role.getRemark().trim());
-        }
         roleRepository.save(role);
         result.put("success", true);
         result.put("message", "新增成功");
