@@ -33,7 +33,6 @@
                     <table class="table role-table">
                         <thead>
                             <tr>
-                                <th width="40"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)"></th>
                                 <th>角色编号</th>
                                 <th>角色名称</th>
                                 <th>权限字符</th>
@@ -63,9 +62,6 @@
             document.getElementById('userDisplay').innerHTML =
                 '欢迎，<strong>' + currentUser.username + '</strong> <span class="role-tag ' + roleClass + '">' + roleText + '</span> &nbsp; ';
         }
-
-        var selectedIds = [];
-        var roleListCache = [];
 
         function logout() {
             fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
@@ -106,9 +102,6 @@
                         return;
                     }
                     var list = result.data || [];
-                    roleListCache = list;
-                    selectedIds = [];
-                    document.getElementById('checkAll').checked = false;
                     renderRoleList(list);
                 })
                 .catch(function() {
@@ -121,21 +114,19 @@
             tbody.innerHTML = '';
             if (list.length === 0) {
                 var tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="7" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
+                tr.innerHTML = '<td colspan="6" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
                 tbody.appendChild(tr);
                 return;
             }
 
             list.forEach(function(role) {
                 var tr = document.createElement('tr');
-                var isChecked = selectedIds.indexOf(role.id) >= 0;
                 var isEnabled = role.status === '0';
                 var statusClass = isEnabled ? 'status-normal' : 'status-disabled';
                 var statusText = isEnabled ? '正常' : '停用';
                 var statusHtml = '<span class="status-tag ' + statusClass + '">' + statusText + '</span>';
 
                 tr.innerHTML =
-                    '<td><input type="checkbox" class="role-checkbox" value="' + role.id + '" ' + (isChecked ? 'checked' : '') + ' onchange="handleCheckboxChange()"></td>' +
                     '<td>' + role.id + '</td>' +
                     '<td>' + (role.name || '') + '</td>' +
                     '<td><code style="background:#f5f5f5; padding:2px 6px; border-radius:3px; color:#c7254e;">' + (role.roleKey || '') + '</code></td>' +
@@ -145,32 +136,6 @@
                 tbody.appendChild(tr);
             });
         }
-
-        function handleCheckboxChange() {
-            selectedIds = [];
-            var checkboxes = document.querySelectorAll('.role-checkbox');
-            checkboxes.forEach(function(cb) {
-                if (cb.checked) {
-                    selectedIds.push(parseInt(cb.value));
-                }
-            });
-            var checkAll = document.getElementById('checkAll');
-            checkAll.checked = checkboxes.length > 0 && selectedIds.length === checkboxes.length;
-        }
-
-        function toggleCheckAll(checkbox) {
-            var checkboxes = document.querySelectorAll('.role-checkbox');
-            selectedIds = [];
-            checkboxes.forEach(function(cb) {
-                cb.checked = checkbox.checked;
-                if (checkbox.checked) {
-                    selectedIds.push(parseInt(cb.value));
-                }
-            });
-        }
-
-        window.onclick = function(event) {
-        };
 
         loadRoles();
     </script>
