@@ -47,6 +47,12 @@ public class RoleController {
             result.put("message", "请先登录");
             return result;
         }
-        return roleService.create(role);
+        Role newRole = new Role();
+        newRole.setName(role.getName());
+        newRole.setRoleKey(role.getRoleKey());
+        newRole.setSort(role.getSort());
+        newRole.setStatus(role.getStatus());
+        newRole.setRemark(role.getRemark());
+        return roleService.create(newRole);
     }
 }

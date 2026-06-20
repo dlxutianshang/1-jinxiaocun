@@ -42,6 +42,7 @@
                                 <th>权限字符</th>
                                 <th>显示顺序</th>
                                 <th>状态</th>
+                                <th>备注</th>
                                 <th>创建时间</th>
                             </tr>
                         </thead>
@@ -180,6 +181,7 @@
                     '<td><code style="background:#f5f5f5; padding:2px 6px; border-radius:3px; color:#c7254e;">' + (role.roleKey || '') + '</code></td>' +
                     '<td>' + (role.sort != null ? role.sort : 0) + '</td>' +
                     '<td>' + statusHtml + '</td>' +
+                    '<td>' + (role.remark || '') + '</td>' +
                     '<td>' + formatDateTime(role.createTime) + '</td>';
                 tbody.appendChild(tr);
             });
