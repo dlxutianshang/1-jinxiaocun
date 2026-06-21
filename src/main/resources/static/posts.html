@@ -33,6 +33,10 @@
                         <div class="search-item">
                             <label>岗位编码：</label>
                             <input type="text" id="searchPostCode" class="search-input" placeholder="请输入岗位编码">
+                            <select id="searchPostCodeMatch" class="search-select" style="width:90px;">
+                                <option value="fuzzy">模糊</option>
+                                <option value="exact">精确</option>
+                            </select>
                         </div>
                         <div class="search-item">
                             <label>岗位名称：</label>
@@ -41,8 +45,8 @@
                         <div class="search-item">
                             <label>状态：</label>
                             <select id="searchStatus" class="search-select">
-                                <option value="">岗位状态</option>
-                                <option value="all">全部</option>
+                                <option value="" disabled selected>岗位状态</option>
+                                <option value="">全部</option>
                                 <option value="0">正常</option>
                                 <option value="1">禁用</option>
                             </select>
@@ -144,8 +148,10 @@
 
         function resetSearch() {
             document.getElementById('searchPostCode').value = '';
+            document.getElementById('searchPostCodeMatch').value = 'fuzzy';
             document.getElementById('searchPostName').value = '';
-            document.getElementById('searchStatus').value = '';
+            var statusSelect = document.getElementById('searchStatus');
+            statusSelect.selectedIndex = 0;
             currentPage = 1;
             loadPosts();
         }
@@ -173,11 +179,24 @@
         function jumpToPage() {
             var input = document.getElementById('jumpPageInput');
             var page = parseInt(input.value);
-            if (page && page >= 1 && page <= totalPages) {
-                currentPage = page;
-                loadPosts();
+            if (!page || isNaN(page)) {
+                showMsg('请输入有效的页码', 'error');
+                input.value = '';
+                return;
             }
+            if (page < 1) {
+                showMsg('页码不能小于1', 'error');
+                input.value = '';
+                return;
+            }
+            if (page > totalPages) {
+                showMsg('页码不能超过总页数(' + totalPages + '页)', 'error');
+                input.value = '';
+                return;
+            }
+            currentPage = page;
             input.value = '';
+            loadPosts();
         }
 
         function goToPage(page) {
@@ -203,11 +222,15 @@
 
         function loadPosts() {
             var postCode = document.getElementById('searchPostCode').value.trim();
+            var postCodeMatch = document.getElementById('searchPostCodeMatch').value;
             var postName = document.getElementById('searchPostName').value.trim();
             var status = document.getElementById('searchStatus').value;
 
             var url = '/api/system/post/list?pageNum=' + currentPage + '&pageSize=' + pageSize;
-            if (postCode) url += '&postCode=' + encodeURIComponent(postCode);
+            if (postCode) {
+                url += '&postCode=' + encodeURIComponent(postCode);
+                url += '&postCodeMatch=' + encodeURIComponent(postCodeMatch);
+            }
             if (postName) url += '&postName=' + encodeURIComponent(postName);
             if (status) url += '&status=' + encodeURIComponent(status);
 

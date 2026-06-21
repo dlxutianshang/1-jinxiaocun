@@ -15,10 +15,10 @@ public class PostService {
     @Autowired
     private PostRepository postRepository;
 
-    public Map<String, Object> findByPage(String postCode, String postName, String status, int pageNum, int pageSize) {
+    public Map<String, Object> findByPage(String postCode, String postCodeMatch, String postName, String status, int pageNum, int pageSize) {
         Map<String, Object> result = new HashMap<>();
-        int total = postRepository.countByCondition(postCode, postName, status);
-        List<Post> list = postRepository.findByCondition(postCode, postName, status, pageNum, pageSize);
+        int total = postRepository.countByCondition(postCode, postCodeMatch, postName, status);
+        List<Post> list = postRepository.findByCondition(postCode, postCodeMatch, postName, status, pageNum, pageSize);
         result.put("total", total);
         result.put("list", list);
         result.put("pageNum", pageNum);

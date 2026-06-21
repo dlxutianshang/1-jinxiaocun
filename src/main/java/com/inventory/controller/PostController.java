@@ -24,6 +24,7 @@ public class PostController {
     @GetMapping("/list")
     public Map<String, Object> list(
             @RequestParam(required = false) String postCode,
+            @RequestParam(required = false) String postCodeMatch,
             @RequestParam(required = false) String postName,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") int pageNum,
@@ -36,7 +37,7 @@ public class PostController {
             result.put("message", "请先登录");
             return result;
         }
-        Map<String, Object> pageData = postService.findByPage(postCode, postName, status, pageNum, pageSize);
+        Map<String, Object> pageData = postService.findByPage(postCode, postCodeMatch, postName, status, pageNum, pageSize);
         result.put("success", true);
         result.put("data", pageData);
         return result;
