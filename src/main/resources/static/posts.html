@@ -57,6 +57,12 @@
                         </div>
                     </div>
 
+                    <div class="toolbar">
+                        <button class="btn btn-primary" onclick="openAddModal()">+ 新增</button>
+                        <button class="btn btn-secondary" id="editBtn" onclick="openEditModal()" disabled>修改</button>
+                        <button class="btn btn-danger" id="deleteBtn" onclick="handleBatchDelete()" disabled>删除</button>
+                    </div>
+
                     <p id="listMsg" class="message"></p>
 
                     <table class="table post-table">
@@ -68,7 +74,9 @@
                                 <th>岗位名称</th>
                                 <th>岗位排序</th>
                                 <th>状态</th>
+                                <th>备注</th>
                                 <th>创建时间</th>
+                                <th style="width: 140px;">操作</th>
                             </tr>
                         </thead>
                         <tbody id="postTableBody"></tbody>
@@ -92,6 +100,68 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modalTitle">新增岗位</span>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="formMsg" class="form-message"></p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>岗位编码：<span class="required">*</span></label>
+                        <input type="text" id="formPostCode" class="form-input" placeholder="请输入岗位编码">
+                        <span class="form-tip" style="color:#909399;">仅支持字母、数字、下划线</span>
+                    </div>
+                    <div class="form-group">
+                        <label>岗位名称：<span class="required">*</span></label>
+                        <input type="text" id="formPostName" class="form-input" placeholder="请输入岗位名称">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>岗位排序：<span class="required">*</span></label>
+                        <input type="number" id="formSort" class="form-input" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>状态：</label>
+                        <select id="formStatus" class="form-input">
+                            <option value="0">正常</option>
+                            <option value="1">禁用</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group" style="width:100%;">
+                        <label>备注：</label>
+                        <textarea id="formRemark" class="form-input" rows="3" placeholder="请输入备注" style="width:100%;resize:vertical;"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitForm()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="width: 400px;">
+            <div class="modal-header">
+                <span id="confirmTitle">提示</span>
+                <span class="close" onclick="closeConfirmModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirmContent" style="color:#606266; font-size:14px; line-height:1.6;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeConfirmModal()">取消</button>
+                <button class="btn btn-danger" id="confirmOkBtn" onclick="executeConfirm()">确定</button>
             </div>
         </div>
     </div>
@@ -129,6 +199,18 @@
             }
         }
 
+        function showFormMsg(text, type) {
+            var msg = document.getElementById('formMsg');
+            msg.textContent = text;
+            msg.className = 'form-message ' + (type || 'success');
+            if (text) {
+                setTimeout(function() {
+                    msg.textContent = '';
+                    msg.className = 'form-message';
+                }, 3000);
+            }
+        }
+
         function formatDateTime(datetime) {
             if (!datetime) return '';
             datetime = datetime.replace('T', ' ').substring(0, 19);
@@ -140,6 +222,10 @@
         var totalPages = 0;
         var total = 0;
         var selectedIds = [];
+        var currentEditId = null;
+        var isEditMode = false;
+
+        var confirmCallback = null;
 
         function searchPosts() {
             currentPage = 1;
@@ -218,6 +304,14 @@
             selectedIds = Array.from(checkboxes).map(function(cb) {
                 return parseInt(cb.value);
             });
+            updateToolbarButtons();
+        }
+
+        function updateToolbarButtons() {
+            var editBtn = document.getElementById('editBtn');
+            var deleteBtn = document.getElementById('deleteBtn');
+            editBtn.disabled = selectedIds.length !== 1;
+            deleteBtn.disabled = selectedIds.length === 0;
         }
 
         function loadPosts() {
@@ -254,6 +348,7 @@
 
                     renderPostList(list);
                     renderPagination();
+                    updateToolbarButtons();
                 })
                 .catch(function() {
                     showMsg('加载失败', 'error');
@@ -268,7 +363,7 @@
 
             if (list.length === 0) {
                 var tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="7" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
+                tr.innerHTML = '<td colspan="9" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
                 tbody.appendChild(tr);
                 return;
             }
@@ -278,7 +373,10 @@
                 var isEnabled = post.status === '0';
                 var statusClass = isEnabled ? 'status-normal' : 'status-disabled';
                 var statusText = isEnabled ? '正常' : '禁用';
-                var statusHtml = '<span class="status-tag ' + statusClass + '">' + statusText + '</span>';
+                var statusHtml = '<span class="status-tag ' + statusClass + '" style="cursor:pointer;" onclick="toggleStatus(' + post.id + ', \'' + post.status + '\')">' + statusText + '</span>';
+
+                var remark = post.remark || '';
+                var remarkDisplay = remark.length > 20 ? remark.substring(0, 20) + '...' : remark;
 
                 tr.innerHTML =
                     '<td><input type="checkbox" class="post-checkbox user-checkbox" value="' + post.id + '" onclick="updateSelectedIds()"></td>' +
@@ -287,7 +385,12 @@
                     '<td>' + (post.postName || '') + '</td>' +
                     '<td>' + (post.sort != null ? post.sort : 0) + '</td>' +
                     '<td>' + statusHtml + '</td>' +
-                    '<td>' + formatDateTime(post.createTime) + '</td>';
+                    '<td title="' + remark + '">' + remarkDisplay + '</td>' +
+                    '<td>' + formatDateTime(post.createTime) + '</td>' +
+                    '<td>' +
+                        '<span class="link-btn link-edit" onclick="openEditSingle(' + post.id + ')">修改</span>' +
+                        '<span class="link-btn link-delete" onclick="handleSingleDelete(' + post.id + ')">删除</span>' +
+                    '</td>';
                 tbody.appendChild(tr);
             });
         }
@@ -342,6 +445,255 @@
             span.textContent = '...';
             container.appendChild(span);
         }
+
+        function openAddModal() {
+            isEditMode = false;
+            currentEditId = null;
+            document.getElementById('modalTitle').textContent = '新增岗位';
+            document.getElementById('formPostCode').value = '';
+            document.getElementById('formPostCode').disabled = false;
+            document.getElementById('formPostName').value = '';
+            document.getElementById('formStatus').value = '0';
+            document.getElementById('formRemark').value = '';
+            showFormMsg('');
+
+            fetch('/api/system/post/nextSort', { credentials: 'include' })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        document.getElementById('formSort').value = result.data;
+                    } else {
+                        document.getElementById('formSort').value = '1';
+                    }
+                })
+                .catch(function() {
+                    document.getElementById('formSort').value = '1';
+                });
+
+            document.getElementById('postModal').style.display = 'block';
+        }
+
+        function openEditModal() {
+            if (selectedIds.length !== 1) {
+                showMsg('请选择单条数据进行修改', 'error');
+                return;
+            }
+            openEditSingle(selectedIds[0]);
+        }
+
+        function openEditSingle(id) {
+            isEditMode = true;
+            currentEditId = id;
+            document.getElementById('modalTitle').textContent = '修改岗位';
+            showFormMsg('');
+
+            fetch('/api/system/post/' + id, { credentials: 'include' })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (!result.success) {
+                        showMsg(result.message, 'error');
+                        return;
+                    }
+                    var post = result.data || {};
+                    document.getElementById('formPostCode').value = post.postCode || '';
+                    document.getElementById('formPostCode').disabled = true;
+                    document.getElementById('formPostName').value = post.postName || '';
+                    document.getElementById('formSort').value = post.sort != null ? post.sort : 0;
+                    document.getElementById('formStatus').value = post.status || '0';
+                    document.getElementById('formRemark').value = post.remark || '';
+                    document.getElementById('postModal').style.display = 'block';
+                })
+                .catch(function() {
+                    showMsg('获取岗位信息失败', 'error');
+                });
+        }
+
+        function closeModal() {
+            document.getElementById('postModal').style.display = 'none';
+            currentEditId = null;
+            isEditMode = false;
+        }
+
+        function validateForm() {
+            var postCode = document.getElementById('formPostCode').value.trim();
+            var postName = document.getElementById('formPostName').value.trim();
+            var sort = document.getElementById('formSort').value;
+
+            if (!isEditMode) {
+                if (!postCode) {
+                    showFormMsg('请输入岗位编码', 'error');
+                    return false;
+                }
+                var codePattern = /^[a-zA-Z0-9_]+$/;
+                if (!codePattern.test(postCode)) {
+                    showFormMsg('岗位编码仅支持字母、数字、下划线', 'error');
+                    return false;
+                }
+            }
+
+            if (!postName) {
+                showFormMsg('请输入岗位名称', 'error');
+                return false;
+            }
+
+            if (sort === '' || isNaN(parseInt(sort))) {
+                showFormMsg('请输入有效的岗位排序', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        function submitForm() {
+            if (!validateForm()) return;
+
+            var data = {
+                postName: document.getElementById('formPostName').value.trim(),
+                sort: parseInt(document.getElementById('formSort').value) || 0,
+                status: document.getElementById('formStatus').value,
+                remark: document.getElementById('formRemark').value.trim()
+            };
+
+            var url, method;
+            if (isEditMode) {
+                url = '/api/system/post/update';
+                method = 'PUT';
+                data.id = currentEditId;
+                data.postCode = document.getElementById('formPostCode').value.trim();
+            } else {
+                url = '/api/system/post/create';
+                method = 'POST';
+                data.postCode = document.getElementById('formPostCode').value.trim();
+            }
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(data)
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        showMsg(result.message, 'success');
+                        closeModal();
+                        loadPosts();
+                        if (result.warnMsg) {
+                            setTimeout(function() {
+                                showMsg(result.warnMsg, 'error');
+                            }, 500);
+                        }
+                    } else {
+                        showFormMsg(result.message, 'error');
+                    }
+                })
+                .catch(function() {
+                    showFormMsg('提交失败', 'error');
+                });
+        }
+
+        function toggleStatus(id, currentStatus) {
+            var newStatus = currentStatus === '0' ? '1' : '0';
+            fetch('/api/system/post/status?id=' + id + '&status=' + newStatus, {
+                method: 'PUT',
+                credentials: 'include'
+            })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        showMsg(result.message, 'success');
+                        loadPosts();
+                        if (result.warnMsg) {
+                            setTimeout(function() {
+                                showMsg(result.warnMsg, 'error');
+                            }, 500);
+                        }
+                    } else {
+                        showMsg(result.message, 'error');
+                    }
+                })
+                .catch(function() {
+                    showMsg('状态切换失败', 'error');
+                });
+        }
+
+        function handleSingleDelete(id) {
+            showConfirm('删除确认', '确定要删除选中的岗位吗？删除后不可恢复', function() {
+                fetch('/api/system/post/' + id, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                })
+                    .then(function(res) { return res.json(); })
+                    .then(function(result) {
+                        if (result.success) {
+                            showMsg(result.message, 'success');
+                            loadPosts();
+                        } else {
+                            showMsg(result.message, 'error');
+                        }
+                    })
+                    .catch(function() {
+                        showMsg('删除失败', 'error');
+                    });
+            });
+        }
+
+        function handleBatchDelete() {
+            if (selectedIds.length === 0) {
+                showMsg('请选择要删除的岗位', 'error');
+                return;
+            }
+            showConfirm('删除确认', '确定要删除选中的 ' + selectedIds.length + ' 条岗位吗？删除后不可恢复', function() {
+                fetch('/api/system/post/batch', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(selectedIds)
+                })
+                    .then(function(res) { return res.json(); })
+                    .then(function(result) {
+                        if (result.success) {
+                            showMsg(result.message, 'success');
+                            loadPosts();
+                        } else {
+                            showMsg(result.message, 'error');
+                        }
+                    })
+                    .catch(function() {
+                        showMsg('删除失败', 'error');
+                    });
+            });
+        }
+
+        function showConfirm(title, content, callback) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmContent').textContent = content;
+            confirmCallback = callback;
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+            confirmCallback = null;
+        }
+
+        function executeConfirm() {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            closeConfirmModal();
+        }
+
+        window.onclick = function(event) {
+            var modal = document.getElementById('postModal');
+            var confirmModal = document.getElementById('confirmModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+            if (event.target == confirmModal) {
+                closeConfirmModal();
+            }
+        };
 
         document.getElementById('jumpPageInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS t_user (
     password VARCHAR(100) NOT NULL,
     email VARCHAR(100),
     dept_id INT DEFAULT 0,
+    post_id INT DEFAULT 0,
     role VARCHAR(20) NOT NULL DEFAULT 'USER',
     nickname VARCHAR(50),
     real_name VARCHAR(50),
@@ -55,6 +56,7 @@ CREATE TABLE IF NOT EXISTS t_post (
     post_name VARCHAR(100) NOT NULL,
     sort INT DEFAULT 0,
     status VARCHAR(10) DEFAULT '0',
+    remark VARCHAR(500),
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

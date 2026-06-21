@@ -26,6 +26,7 @@ public class PostRepository {
         p.setPostName(rs.getString("post_name"));
         p.setSort(rs.getInt("sort"));
         p.setStatus(rs.getString("status"));
+        p.setRemark(rs.getString("remark"));
         Timestamp ts = rs.getTimestamp("create_time");
         p.setCreateTime(ts != null ? sdf.format(ts) : "");
         return p;
@@ -81,5 +82,70 @@ public class PostRepository {
         params.add((pageNum - 1) * pageSize);
         params.add(pageSize);
         return jdbc.query(sql.toString(), rowMapper, params.toArray());
+    }
+
+    public Post findById(Integer id) {
+        List<Post> list = jdbc.query("SELECT * FROM t_post WHERE id = ?", rowMapper, id);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    public Post findByPostCode(String postCode) {
+        List<Post> list = jdbc.query("SELECT * FROM t_post WHERE post_code = ?", rowMapper, postCode);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    public Post findByPostCodeExcludeId(String postCode, Integer excludeId) {
+        List<Post> list = jdbc.query("SELECT * FROM t_post WHERE post_code = ? AND id != ?", rowMapper, postCode, excludeId);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+    public int save(Post post) {
+        return jdbc.update("INSERT INTO t_post (post_code, post_name, sort, status, remark) VALUES (?, ?, ?, ?, ?)",
+                post.getPostCode(),
+                post.getPostName(),
+                post.getSort() == null ? 0 : post.getSort(),
+                post.getStatus() == null ? "0" : post.getStatus(),
+                post.getRemark());
+    }
+
+    public int update(Post post) {
+        return jdbc.update("UPDATE t_post SET post_name = ?, sort = ?, status = ?, remark = ? WHERE id = ?",
+                post.getPostName(),
+                post.getSort() == null ? 0 : post.getSort(),
+                post.getStatus() == null ? "0" : post.getStatus(),
+                post.getRemark(),
+                post.getId());
+    }
+
+    public int updateStatus(Integer id, String status) {
+        return jdbc.update("UPDATE t_post SET status = ? WHERE id = ?", status, id);
+    }
+
+    public int delete(Integer id) {
+        return jdbc.update("DELETE FROM t_post WHERE id = ?", id);
+    }
+
+    public int deleteBatch(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return 0;
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < ids.size(); i++) {
+            if (i > 0) placeholders.append(",");
+            placeholders.append("?");
+        }
+        return jdbc.update("DELETE FROM t_post WHERE id IN (" + placeholders + ")", ids.toArray());
+    }
+
+    public int countByPostId(Integer postId) {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM t_user WHERE post_id = ?", Integer.class, postId);
+        return count != null ? count : 0;
+    }
+
+    public int getMaxSort() {
+        try {
+            Integer maxSort = jdbc.queryForObject("SELECT MAX(sort) FROM t_post", Integer.class);
+            return maxSort != null ? maxSort : 0;
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }
