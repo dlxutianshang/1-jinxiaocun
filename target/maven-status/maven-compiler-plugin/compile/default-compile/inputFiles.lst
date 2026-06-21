@@ -1,11 +1,15 @@
+D:\Project\Ai\1-进销存\src\main\java\com\inventory\service\PostService.java
+D:\Project\Ai\1-进销存\src\main\java\com\inventory\repository\PostRepository.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\controller\DeptController.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\controller\RoleController.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\model\Dept.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\controller\UserController.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\repository\RoleRepository.java
+D:\Project\Ai\1-进销存\src\main\java\com\inventory\model\Post.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\repository\DeptRepository.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\config\SecurityConfig.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\service\RoleService.java
+D:\Project\Ai\1-进销存\src\main\java\com\inventory\controller\PostController.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\service\UserService.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\repository\UserRepository.java
 D:\Project\Ai\1-进销存\src\main\java\com\inventory\InventoryApplication.java

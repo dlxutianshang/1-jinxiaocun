@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>岗位管理</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="layout-body">
+    <div class="layout">
+        <div class="sidebar">
+            <div class="logo">
+                <h2>进销存系统</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html" class="menu-item">🏠 首页</a></li>
+                <li><a href="departments.html" class="menu-item">🏢 部门管理</a></li>
+                <li><a href="users.html" class="menu-item">👥 用户管理</a></li>
+                <li><a href="roles.html" class="menu-item">🎭 角色管理</a></li>
+                <li><a href="posts.html" class="menu-item active">💼 岗位管理</a></li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <div class="top-header">
+                <div class="breadcrumb">系统管理 / 岗位管理</div>
+                <div class="user-area">
+                    <span id="userDisplay"></span>
+                    <button class="btn btn-danger btn-sm" onclick="logout()">退出登录</button>
+                </div>
+            </div>
+            <div class="page-content">
+                <div class="card">
+                    <div class="search-bar">
+                        <div class="search-item">
+                            <label>岗位编码：</label>
+                            <input type="text" id="searchPostCode" class="search-input" placeholder="请输入岗位编码">
+                        </div>
+                        <div class="search-item">
+                            <label>岗位名称：</label>
+                            <input type="text" id="searchPostName" class="search-input" placeholder="请输入岗位名称">
+                        </div>
+                        <div class="search-item">
+                            <label>状态：</label>
+                            <select id="searchStatus" class="search-select">
+                                <option value="">岗位状态</option>
+                                <option value="all">全部</option>
+                                <option value="0">正常</option>
+                                <option value="1">禁用</option>
+                            </select>
+                        </div>
+                        <div class="search-actions">
+                            <button class="btn btn-primary" onclick="searchPosts()">搜索</button>
+                            <button class="btn btn-default" onclick="resetSearch()">重置</button>
+                        </div>
+                    </div>
+
+                    <p id="listMsg" class="message"></p>
+
+                    <table class="table post-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;"><input type="checkbox" id="checkAll" onclick="toggleCheckAll()"></th>
+                                <th>岗位编号</th>
+                                <th>岗位编码</th>
+                                <th>岗位名称</th>
+                                <th>岗位排序</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="postTableBody"></tbody>
+                    </table>
+
+                    <div class="pagination">
+                        <div class="pagination-info" id="paginationInfo"></div>
+                        <div class="pagination-controls">
+                            <select id="pageSizeSelect" class="pagination-select" onchange="changePageSize()">
+                                <option value="10">10 条/页</option>
+                                <option value="20">20 条/页</option>
+                                <option value="50">50 条/页</option>
+                            </select>
+                            <button class="pagination-btn" id="prevBtn" onclick="prevPage()">上一页</button>
+                            <div class="pagination-pages" id="paginationPages"></div>
+                            <button class="pagination-btn" id="nextBtn" onclick="nextPage()">下一页</button>
+                            <div class="pagination-jump">
+                                跳至 <input type="number" id="jumpPageInput" class="pagination-input" min="1"> 页
+                                <button class="pagination-btn pagination-jump-btn" onclick="jumpToPage()">GO</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var currentUser = null;
+        try {
+            currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        } catch (e) {}
+
+        if (!currentUser || !currentUser.id) {
+            window.location.href = 'index.html';
+        } else {
+            var roleText = currentUser.role === 'ADMIN' ? '超级管理员' : '普通用户';
+            var roleClass = currentUser.role === 'ADMIN' ? 'role-admin' : 'role-user';
+            document.getElementById('userDisplay').innerHTML =
+                '欢迎，<strong>' + currentUser.username + '</strong> <span class="role-tag ' + roleClass + '">' + roleText + '</span> &nbsp; ';
+        }
+
+        function logout() {
+            fetch('/api/user/logout', { method: 'POST', credentials: 'include' });
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+
+        function showMsg(text, type) {
+            var msg = document.getElementById('listMsg');
+            msg.textContent = text;
+            msg.className = 'message ' + (type || 'success');
+            if (text) {
+                setTimeout(function() {
+                    msg.textContent = '';
+                    msg.className = 'message';
+                }, 3000);
+            }
+        }
+
+        function formatDateTime(datetime) {
+            if (!datetime) return '';
+            datetime = datetime.replace('T', ' ').substring(0, 19);
+            return datetime;
+        }
+
+        var currentPage = 1;
+        var pageSize = 10;
+        var totalPages = 0;
+        var total = 0;
+        var selectedIds = [];
+
+        function searchPosts() {
+            currentPage = 1;
+            loadPosts();
+        }
+
+        function resetSearch() {
+            document.getElementById('searchPostCode').value = '';
+            document.getElementById('searchPostName').value = '';
+            document.getElementById('searchStatus').value = '';
+            currentPage = 1;
+            loadPosts();
+        }
+
+        function changePageSize() {
+            pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            currentPage = 1;
+            loadPosts();
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadPosts();
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadPosts();
+            }
+        }
+
+        function jumpToPage() {
+            var input = document.getElementById('jumpPageInput');
+            var page = parseInt(input.value);
+            if (page && page >= 1 && page <= totalPages) {
+                currentPage = page;
+                loadPosts();
+            }
+            input.value = '';
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadPosts();
+        }
+
+        function toggleCheckAll() {
+            var checkAll = document.getElementById('checkAll');
+            var checkboxes = document.querySelectorAll('.post-checkbox');
+            checkboxes.forEach(function(cb) {
+                cb.checked = checkAll.checked;
+            });
+            updateSelectedIds();
+        }
+
+        function updateSelectedIds() {
+            var checkboxes = document.querySelectorAll('.post-checkbox:checked');
+            selectedIds = Array.from(checkboxes).map(function(cb) {
+                return parseInt(cb.value);
+            });
+        }
+
+        function loadPosts() {
+            var postCode = document.getElementById('searchPostCode').value.trim();
+            var postName = document.getElementById('searchPostName').value.trim();
+            var status = document.getElementById('searchStatus').value;
+
+            var url = '/api/system/post/list?pageNum=' + currentPage + '&pageSize=' + pageSize;
+            if (postCode) url += '&postCode=' + encodeURIComponent(postCode);
+            if (postName) url += '&postName=' + encodeURIComponent(postName);
+            if (status) url += '&status=' + encodeURIComponent(status);
+
+            fetch(url, { credentials: 'include' })
+                .then(function(res) { return res.json(); })
+                .then(function(result) {
+                    if (!result.success) {
+                        if (result.message === '请先登录') {
+                            window.location.href = 'index.html';
+                            return;
+                        }
+                        showMsg(result.message, 'error');
+                        return;
+                    }
+                    var data = result.data || {};
+                    var list = data.list || [];
+                    total = data.total || 0;
+                    pageSize = data.pageSize || 10;
+                    currentPage = data.pageNum || 1;
+                    totalPages = Math.ceil(total / pageSize) || 1;
+
+                    renderPostList(list);
+                    renderPagination();
+                })
+                .catch(function() {
+                    showMsg('加载失败', 'error');
+                });
+        }
+
+        function renderPostList(list) {
+            var tbody = document.getElementById('postTableBody');
+            tbody.innerHTML = '';
+            document.getElementById('checkAll').checked = false;
+            selectedIds = [];
+
+            if (list.length === 0) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="7" style="text-align:center; color:#909399; padding:40px 0;">暂无数据</td>';
+                tbody.appendChild(tr);
+                return;
+            }
+
+            list.forEach(function(post) {
+                var tr = document.createElement('tr');
+                var isEnabled = post.status === '0';
+                var statusClass = isEnabled ? 'status-normal' : 'status-disabled';
+                var statusText = isEnabled ? '正常' : '禁用';
+                var statusHtml = '<span class="status-tag ' + statusClass + '">' + statusText + '</span>';
+
+                tr.innerHTML =
+                    '<td><input type="checkbox" class="post-checkbox user-checkbox" value="' + post.id + '" onclick="updateSelectedIds()"></td>' +
+                    '<td>' + post.id + '</td>' +
+                    '<td><code style="background:#f5f5f5; padding:2px 6px; border-radius:3px; color:#c7254e;">' + (post.postCode || '') + '</code></td>' +
+                    '<td>' + (post.postName || '') + '</td>' +
+                    '<td>' + (post.sort != null ? post.sort : 0) + '</td>' +
+                    '<td>' + statusHtml + '</td>' +
+                    '<td>' + formatDateTime(post.createTime) + '</td>';
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderPagination() {
+            document.getElementById('paginationInfo').textContent = '共 ' + total + ' 条';
+            document.getElementById('pageSizeSelect').value = pageSize;
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+
+            var pagesContainer = document.getElementById('paginationPages');
+            pagesContainer.innerHTML = '';
+
+            var maxVisiblePages = 5;
+            var startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            var endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            if (startPage > 1) {
+                addPageButton(pagesContainer, 1);
+                if (startPage > 2) {
+                    addEllipsis(pagesContainer);
+                }
+            }
+
+            for (var i = startPage; i <= endPage; i++) {
+                addPageButton(pagesContainer, i);
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    addEllipsis(pagesContainer);
+                }
+                addPageButton(pagesContainer, totalPages);
+            }
+        }
+
+        function addPageButton(container, pageNum) {
+            var btn = document.createElement('button');
+            btn.className = 'pagination-btn pagination-page' + (pageNum === currentPage ? ' active' : '');
+            btn.textContent = pageNum;
+            btn.onclick = function() { goToPage(pageNum); };
+            container.appendChild(btn);
+        }
+
+        function addEllipsis(container) {
+            var span = document.createElement('span');
+            span.className = 'pagination-ellipsis';
+            span.textContent = '...';
+            container.appendChild(span);
+        }
+
+        document.getElementById('jumpPageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                jumpToPage();
+            }
+        });
+
+        loadPosts();
+    </script>
+</body>
+</html>

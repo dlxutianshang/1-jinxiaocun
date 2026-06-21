@@ -793,3 +793,127 @@ a {
     color: #ff4d4f;
     border: 1px solid #ffccc7;
 }
+
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.pagination-info {
+    color: #606266;
+    font-size: 14px;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pagination-select {
+    padding: 6px 10px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    background: #fff;
+}
+
+.pagination-select:focus {
+    border-color: #409eff;
+}
+
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    background: #fff;
+    color: #606266;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled):not(.active) {
+    border-color: #409eff;
+    color: #409eff;
+}
+
+.pagination-btn.active {
+    background: #409eff;
+    border-color: #409eff;
+    color: #fff;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-pages {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.pagination-page {
+    min-width: 32px;
+    padding: 0 8px;
+}
+
+.pagination-ellipsis {
+    color: #909399;
+    font-size: 14px;
+    padding: 0 4px;
+}
+
+.pagination-jump {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #606266;
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+.pagination-input {
+    width: 50px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+    text-align: center;
+}
+
+.pagination-input:focus {
+    border-color: #409eff;
+}
+
+.pagination-jump-btn {
+    min-width: 40px;
+    padding: 0 8px;
+}
+
+.post-table {
+    margin-top: 0;
+}
+
+.post-table th,
+.post-table td {
+    vertical-align: middle;
+}
